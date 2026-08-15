@@ -23,7 +23,7 @@ export default function OverlayBox({
   top,
   bottom,
   width = 320,
-  zIndex = 0,
+  zIndex = 1000,
   bgcolor = "rgba(255,255,255,0.95)",
   sx,
   ariaLabel,

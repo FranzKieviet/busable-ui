@@ -5,7 +5,6 @@ import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
 import OverlayBox from "@/components/OverlayBox";
 import BusStopsList from "@/components/BusStopsList";
-import TempControl from "@/components/TempControl";
 import { BusStopsProvider } from "@/context/BusStopsContext";
 export default function Home() {
   return (
@@ -24,13 +23,6 @@ export default function Home() {
         <OverlayBox left={100} top={100} bottom={100} width={320} zIndex={0} ariaLabel="left-overlay">
           <BusStopsList />
         </OverlayBox>
-
-        {/* Right overlay control adding or removing bus stops */}
-        <OverlayBox right={100} top={100} bottom={100} width={320} zIndex={0} ariaLabel="right-overlay">
-          <TempControl />
-        </OverlayBox>
-
-
       </Box>
     </BusStopsProvider>
   );

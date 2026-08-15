@@ -131,6 +131,14 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         .setLngLat(searchedLocation)
         .addTo(map)
       markersRef.current[key] = m
+      try {
+        // center the map on the searched location; prefer keeping current zoom if already zoomed in
+        const currentZoom = typeof map.getZoom === 'function' ? map.getZoom() : undefined
+        const targetZoom = typeof currentZoom === 'number' && currentZoom > 14 ? currentZoom : 15
+        map.flyTo({ center: searchedLocation, zoom: targetZoom, essential: true })
+      } catch (err) {
+        console.warn('map center/flyTo failed', err)
+      }
     }
   }, [searchedLocation])
 
