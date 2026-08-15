@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import { useBusStops } from "@/context/BusStopsContext"
+import { usePlaces } from "@/context/PlacesContext"
 import * as maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 
@@ -19,6 +20,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
   const markersRef = useRef<Record<string, any>>({})
   const { stops } = useBusStops()
   const { searchedLocation } = useBusStops()
+  const { places } = usePlaces()
 
   useEffect(() => {
     if (!mapEl.current) return
@@ -81,10 +83,22 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     const map = mapRef.current
     if (!map) return
 
-    const existingIds = new Set(Object.keys(markersRef.current))
+    // If there are places visible, hide stop markers to avoid clutter.
+    if (places && places.length > 0) {
+      // remove any existing stop markers (keys without 'place:' prefix and not searched marker)
+      Object.keys(markersRef.current).forEach((id) => {
+        if (id === '__searched_location') return
+        if (!id.startsWith('place:')) {
+          try { markersRef.current[id].remove() } catch (_) {}
+          delete markersRef.current[id]
+        }
+      })
+      return
+    }
+
     const stopIds = new Set(stops.map((s) => s.id))
 
-    // Add new markers
+    // Add new markers for stops (only when places are not showing)
     stops.forEach((s) => {
       if (markersRef.current[s.id]) return
       const m = new (maplibregl as any).Marker()
@@ -96,14 +110,13 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
 
     // Remove markers for stops that no longer exist
     Object.keys(markersRef.current).forEach((id) => {
+      if (id === '__searched_location' || id.startsWith('place:')) return
       if (!stopIds.has(id)) {
-        try {
-          markersRef.current[id].remove()
-        } catch (_) {}
+        try { markersRef.current[id].remove() } catch (_) {}
         delete markersRef.current[id]
       }
     })
-  }, [stops])
+  }, [stops, places])
 
   // Render a red marker for the last searched location (if any).
   useEffect(() => {
@@ -141,6 +154,62 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
       }
     }
   }, [searchedLocation])
+
+  // Sync place markers: when places are present, render green pins and remove stop markers.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Remove existing place markers if places list is empty
+    const placeKeys = Object.keys(markersRef.current).filter((k) => k.startsWith('place:'))
+    if (!places || places.length === 0) {
+      placeKeys.forEach((k) => {
+        try { markersRef.current[k].remove() } catch (_) {}
+        delete markersRef.current[k]
+      })
+
+      // Re-add stop markers if any stops exist (since we removed them when places showed)
+      // Iterate `stops` from bus context and add markers if missing
+      stops.forEach((s: any) => {
+        if (markersRef.current[s.id]) return
+        const m = new (maplibregl as any).Marker()
+          .setLngLat(s.coords)
+          .setPopup(new (maplibregl as any).Popup({ offset: 25 }).setText(s.name))
+          .addTo(map)
+        markersRef.current[s.id] = m
+      })
+      return
+    }
+
+    // When places exist, remove any stop markers to declutter
+    Object.keys(markersRef.current).forEach((id) => {
+      if (id === '__searched_location') return
+      if (!id.startsWith('place:')) {
+        try { markersRef.current[id].remove() } catch (_) {}
+        delete markersRef.current[id]
+      }
+    })
+
+    // Add place markers
+    places.forEach((p) => {
+      const key = `place:${p.id}`
+      if (markersRef.current[key]) return
+      const el = document.createElement('div')
+      el.style.width = '16px'
+      el.style.height = '16px'
+      el.style.borderRadius = '50%'
+      el.style.background = 'green'
+      el.style.border = '2px solid white'
+      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)'
+      el.title = p.name
+
+      const m = new (maplibregl as any).Marker({ element: el })
+        .setLngLat(p.coords)
+        .setPopup(new (maplibregl as any).Popup({ offset: 25 }).setText(p.name))
+        .addTo(map)
+      markersRef.current[key] = m
+    })
+  }, [places])
 
   return (
     <div style={{ position: 'relative' }}>

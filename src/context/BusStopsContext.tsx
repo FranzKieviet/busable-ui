@@ -11,14 +11,13 @@ export type BusStop = {
   routes?: string[]
 }
 
-
 //Shape of the context value
 type Ctx = {
   stops: BusStop[]
   // React state updater function that either accepts a new array of busStops or will accept the previous state and return a new array of busStops
   setStops: React.Dispatch<React.SetStateAction<BusStop[]>>
-  // refreshStops allows consumers to request stops from the server (options: q, lat, lon)
-  refreshStops?: (opts?: { q?: string; lat?: number; lon?: number }) => Promise<void>
+  // refreshStops allows consumers to request stops from the server (options: lat, lon)
+  refreshStops?: (opts?: { lat?: number; lon?: number }) => Promise<void>
   // the last searched location (stored as [lon, lat]) when a location search was performed
   searchedLocation?: [number, number] | null
   setSearchedLocation?: (v: [number, number] | null) => void
@@ -34,15 +33,17 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [searchedLocation, setSearchedLocation] = useState<[number, number] | null>(null)
 
-  async function refreshStops(opts?: { q?: string; lat?: number; lon?: number }) {
+  async function refreshStops(opts?: { lat?: number; lon?: number }) {
     setLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (opts?.q) params.set('q', opts.q)
-      if (typeof opts?.lat === 'number') params.set('lat', String(opts.lat))
-      if (typeof opts?.lon === 'number') params.set('lon', String(opts.lon))
+      // Build the upstream path + query (client-side) and send it to the server for proxying.
+      const endpointBase = 'bus-stops/nearest-stops-by-line'
+      const epParams = new URLSearchParams()
+      if (typeof opts?.lat === 'number') epParams.set('latitude', String(opts.lat))
+      if (typeof opts?.lon === 'number') epParams.set('longitude', String(opts.lon))
+      const endpointFull = endpointBase + (epParams.toString() ? `?${epParams.toString()}` : '')
 
-      const url = `/api/stops${params.toString() ? `?${params.toString()}` : ''}`
+      const url = `/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(await res.text())
       const raw = await res.json()

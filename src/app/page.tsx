@@ -3,8 +3,7 @@
 import { Container, Box } from "@mui/material";
 import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
-import OverlayBox from "@/components/OverlayBox";
-import BusStopsList from "@/components/BusStopsList";
+import LeftOverlay from "@/components/LeftOverlay";
 import { BusStopsProvider } from "@/context/BusStopsContext";
 export default function Home() {
   return (
@@ -20,9 +19,7 @@ export default function Home() {
       <Map center={[-122.2578, 37.8721]} zoom={15} />
 
       {/* Left overlay to display Bus Stops */}
-        <OverlayBox left={100} top={100} bottom={100} width={320} zIndex={0} ariaLabel="left-overlay">
-          <BusStopsList />
-        </OverlayBox>
+        <LeftOverlay />
       </Box>
     </BusStopsProvider>
   );

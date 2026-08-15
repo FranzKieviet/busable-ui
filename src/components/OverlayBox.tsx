@@ -1,7 +1,10 @@
 "use client"
 
 import React, { ReactNode } from "react"
-import { Box } from "@mui/material"
+import { Box, IconButton } from "@mui/material"
+import SignpostIcon from '@mui/icons-material/Signpost'
+import MyLocationIcon from '@mui/icons-material/MyLocation'
+import CloseIcon from '@mui/icons-material/Close'
 
 type Props = {
   children?: ReactNode
@@ -14,6 +17,10 @@ type Props = {
   bgcolor?: string
   sx?: any
   ariaLabel?: string
+  // optional callbacks for the three header buttons (rendered top-right)
+  onBusStopsClick?: () => void
+  onLocateClick?: () => void
+  onCloseClick?: () => void
 }
 
 export default function OverlayBox({
@@ -27,6 +34,9 @@ export default function OverlayBox({
   bgcolor = "rgba(255,255,255,0.95)",
   sx,
   ariaLabel,
+  onBusStopsClick,
+  onLocateClick,
+  onCloseClick,
 }: Props) {
   const positionStyle: any = { position: "fixed", zIndex }
   if (left !== undefined) positionStyle.left = left
@@ -48,6 +58,17 @@ export default function OverlayBox({
       }}
       aria-label={ariaLabel}
     >
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 1 }}>
+        <IconButton size="small" aria-label="bus stops" onClick={onBusStopsClick}>
+          <SignpostIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label="locate" onClick={onLocateClick}>
+          <MyLocationIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label="close" onClick={onCloseClick}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
       {children}
     </Box>
   )

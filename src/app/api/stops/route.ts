@@ -7,34 +7,25 @@ const MOCK: BusStop[] = [
   { id: '3', name: 'Doe Library', coords: [-122.2594, 37.8728] },
 ]
 
-function haversine(lon1: number, lat1: number, lon2: number, lat2: number) {
-  const toRad = (v: number) => (v * Math.PI) / 180
-  const R = 6371000 // meters
-  const dLat = toRad(lat2 - lat1)
-  const dLon = toRad(lon2 - lon1)
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
-    const q = url.searchParams.get('q')?.toString().trim().toLowerCase() || ''
 
-    // Prefer verbose names `longitude`/`latitude`. If absent, map short names `lon`/`lat`.
-    const upstream = new URL('https://localhost:32773/bus-stops/nearest-stops-by-line')
-    const hasLongNames = url.searchParams.has('longitude') || url.searchParams.has('latitude')
-    if (hasLongNames) {
-      if (url.searchParams.has('longitude')) upstream.searchParams.set('longitude', String(url.searchParams.get('longitude')))
-      if (url.searchParams.has('latitude')) upstream.searchParams.set('latitude', String(url.searchParams.get('latitude')))
-    } else {
-      if (url.searchParams.has('lon')) upstream.searchParams.set('longitude', String(url.searchParams.get('lon')))
-      if (url.searchParams.has('lat')) upstream.searchParams.set('latitude', String(url.searchParams.get('lat')))
+    // Server requires an `endpoint` query param (path only).
+    const endpointParam = url.searchParams.get('endpoint')
+    if (!endpointParam) {
+      return NextResponse.json({ error: 'missing endpoint' }, { status: 400 })
     }
-    if (q) upstream.searchParams.set('q', q)
+    // Reject absolute URLs and require a safe path (may include query string)
+    if (endpointParam.includes('://') || endpointParam.startsWith('//')) {
+      return NextResponse.json({ error: 'absolute urls are not allowed' }, { status: 400 })
+    }
+    // Basic sanitization: allow letters, numbers, dash, underscore, slashes and common query chars
+    if (!/^[A-Za-z0-9_\-\/\?&=%.,:+]+$/.test(endpointParam)) {
+      return NextResponse.json({ error: 'invalid endpoint' }, { status: 400 })
+    }
+    const upstreamBase = 'https://localhost:32773/'
+    const upstream = new URL(endpointParam, upstreamBase)
 
     // Call upstream service exactly with the provided values (no auto-swapping or assumptions).
     console.log('[stops route] upstream URL ->', upstream.toString())
@@ -83,22 +74,7 @@ export async function GET(req: Request) {
     }
 
     // Fallback: return local MOCK filtered only by `q` when upstream is unavailable
-    let results = MOCK.slice()
-    if (q) results = results.filter((s) => s.name.toLowerCase().includes(q) || s.id === q)
-    return NextResponse.json(results)
-  } catch (err) {
-    return NextResponse.json({ error: 'failed to load' }, { status: 500 })
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const body = await req.json().catch(() => ({}))
-    const q = (body?.query || '').toString().trim().toLowerCase()
-    if (!q) return NextResponse.json(MOCK)
-
-    const filtered = MOCK.filter((s) => s.name.toLowerCase().includes(q) || s.id === q)
-    return NextResponse.json(filtered)
+    return NextResponse.json(MOCK.slice())
   } catch (err) {
     return NextResponse.json({ error: 'failed to load' }, { status: 500 })
   }

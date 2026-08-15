@@ -2,31 +2,31 @@
 
 import React, { useState, useRef } from "react"
 import { List, ListItem, ListItemText, Divider, Button, TextField, Autocomplete, CircularProgress } from "@mui/material"
-import { useBusStops } from "@/context/BusStopsContext"
-import type { BusStop } from "@/context/BusStopsContext"
+import { usePlaces } from "@/context/PlacesContext"
+import type { Place } from "@/context/PlacesContext"
 
-export default function BusStopsList() {
-  const { stops} = useBusStops()
+export default function PlacesList() {
+  const { places } = usePlaces()
 
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, flexDirection: 'column', marginBottom: 8 }}>
-        <h3 style={{ margin: 0 }}>Bus Stops</h3>
+        <h3 style={{ margin: 0 }}>Places</h3>
       </div>
       {/* Lat/Lon inputs removed — search by address now handles location searches */}
 
       <Divider />
       <List>
-        {stops.length === 0 && (
+        {places.length === 0 && (
           <ListItem>
-            <ListItemText primary="No stops to display." />
+            <ListItemText primary="No places to display." />
           </ListItem>
         )}
-        {stops.map((s: BusStop) => (
-          <React.Fragment key={s.id}>
+        {places.map((p: Place) => (
+          <React.Fragment key={p.id}>
             <ListItem>
-              <ListItemText primary={s.name} />
+              <ListItemText primary={p.name} />
             </ListItem>
             <Divider />
           </React.Fragment>
