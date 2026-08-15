@@ -18,6 +18,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
   const mapRef = useRef<any>(null)
   const markersRef = useRef<Record<string, any>>({})
   const { stops } = useBusStops()
+  const { searchedLocation } = useBusStops()
 
   useEffect(() => {
     if (!mapEl.current) return
@@ -103,6 +104,35 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
       }
     })
   }, [stops])
+
+  // Render a red marker for the last searched location (if any).
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    const key = '__searched_location'
+    // remove existing searched marker
+    if (markersRef.current[key]) {
+      try { markersRef.current[key].remove() } catch (_) {}
+      delete markersRef.current[key]
+    }
+
+    if (searchedLocation && Array.isArray(searchedLocation)) {
+      const el = document.createElement('div')
+      el.style.width = '18px'
+      el.style.height = '18px'
+      el.style.borderRadius = '50%'
+      el.style.background = 'red'
+      el.style.border = '2px solid white'
+      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)'
+      el.title = 'Searched location'
+
+      const m = new (maplibregl as any).Marker({ element: el })
+        .setLngLat(searchedLocation)
+        .addTo(map)
+      markersRef.current[key] = m
+    }
+  }, [searchedLocation])
 
   return (
     <div style={{ position: 'relative' }}>
