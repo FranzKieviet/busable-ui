@@ -2,24 +2,36 @@
 
 import { Container, Box } from "@mui/material";
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import About from "@/components/About";
-
+import Map from "@/components/Map";
+import OverlayBox from "@/components/OverlayBox";
+import BusStopsList from "@/components/BusStopsList";
+import TempControl from "@/components/TempControl";
+import { BusStopsProvider } from "@/context/BusStopsContext";
 export default function Home() {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #ffffff, #0099D8)",
-      }}
-    >
+    <BusStopsProvider>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #ffffff, #0099D8)",
+        }}
+      >
       <Navbar />
 
-      <Container maxWidth="md" sx={{ mt: 10, textAlign: "center" }}>
-        <Hero />
-      </Container>
+      <Map center={[-122.2578, 37.8721]} zoom={15} />
 
-      <About />
-    </Box>
+      {/* Left overlay to display Bus Stops */}
+        <OverlayBox left={100} top={100} bottom={100} width={320} zIndex={0} ariaLabel="left-overlay">
+          <BusStopsList />
+        </OverlayBox>
+
+        {/* Right overlay control adding or removing bus stops */}
+        <OverlayBox right={100} top={100} bottom={100} width={320} zIndex={0} ariaLabel="right-overlay">
+          <TempControl />
+        </OverlayBox>
+
+
+      </Box>
+    </BusStopsProvider>
   );
 }
