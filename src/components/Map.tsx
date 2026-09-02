@@ -21,19 +21,25 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
   const { stops } = useBusStops()
   const { searchedLocation } = useBusStops()
   const { places } = usePlaces()
+  const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY
+
+
 
   useEffect(() => {
     if (!mapEl.current) return
+    if (!cartoKey) {
+      setError('CARTO API key not found. Set NEXT_PUBLIC_CARTO_API_KEY in .env.local and restart the dev server.')
+      return
+    }
     let map
     try {
-      // Inline raster style using OpenStreetMap tiles as a reliable fallback
       const styleObj = {
         version: 8,
         sources: {
           rasterTiles: {
             type: 'raster',
             // Carto Light with labels — shows street names
-            tiles: ['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],
+            tiles: [`https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=${cartoKey}`],
             tileSize: 256,
           },
         },
@@ -76,7 +82,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         mapRef.current = null
       } catch (_) {}
     }
-  }, [center, zoom])
+  }, [center, zoom, cartoKey])
 
   // Sync markers with stops from context
   useEffect(() => {
