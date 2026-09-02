@@ -1,11 +1,15 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import { List, ListItem, ListItemText, Divider, Button, TextField, Autocomplete, CircularProgress } from "@mui/material"
+import { List, ListItem, ListItemText, ListItemButton, Divider, Button, TextField, Autocomplete, CircularProgress } from "@mui/material"
 import { usePlaces } from "@/context/PlacesContext"
 import type { Place } from "@/context/PlacesContext"
 
-export default function PlacesList() {
+type Props = {
+  onSelect?: (p: Place) => void
+}
+
+export default function PlacesList({ onSelect }: Props) {
   const { places } = usePlaces()
 
 
@@ -26,7 +30,9 @@ export default function PlacesList() {
         {places.map((p: Place) => (
           <React.Fragment key={p.id}>
             <ListItem>
-              <ListItemText primary={p.name} />
+              <ListItemButton onClick={() => onSelect?.(p)}>
+                <ListItemText primary={p.name} />
+              </ListItemButton>
             </ListItem>
             <Divider />
           </React.Fragment>

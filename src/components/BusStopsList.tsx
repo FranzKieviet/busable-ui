@@ -1,12 +1,16 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import { List, ListItem, ListItemText, Divider, Button, TextField, Autocomplete, CircularProgress } from "@mui/material"
+import { List, ListItem, ListItemText, ListItemButton, Divider, Button, TextField, Autocomplete, CircularProgress } from "@mui/material"
 import { useBusStops } from "@/context/BusStopsContext"
 import type { BusStop } from "@/context/BusStopsContext"
 
-export default function BusStopsList() {
-  const { stops} = useBusStops()
+type Props = {
+  onSelect?: (s: BusStop) => void
+}
+
+export default function BusStopsList({ onSelect }: Props) {
+  const { stops } = useBusStops()
 
 
   return (
@@ -26,7 +30,9 @@ export default function BusStopsList() {
         {stops.map((s: BusStop) => (
           <React.Fragment key={s.id}>
             <ListItem>
-              <ListItemText primary={s.name} />
+              <ListItemButton onClick={() => onSelect?.(s)}>
+                <ListItemText primary={s.name} />
+              </ListItemButton>
             </ListItem>
             <Divider />
           </React.Fragment>
