@@ -48,21 +48,6 @@ export default function Navbar() {
             style={{ borderRadius: 8 }}
         />
 
-        {/* RIGHT SIDE (navigation links) */}
-        <Box sx={{ flexGrow: 1 }} /> {/* This is a spacer that pushes the links to the right */}
-            <Button sx={navButtonStyle} component="a" href="#top">
-              Home
-            </Button>
-            <Button sx={navButtonStyle} component="a" href="#about">
-              About
-            </Button>
-            <Button sx={navButtonStyle} component="a" href="#projects">
-              Projects
-            </Button>
-            <Button sx={navButtonStyle} component="a" href="#resume">
-              Resume
-            </Button>
-
       </Toolbar>
     </AppBar>
   );
