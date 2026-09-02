@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     if (!/^[A-Za-z0-9_\-\/\?&=%.,:+]+$/.test(endpointParam)) {
       return NextResponse.json({ error: 'invalid endpoint' }, { status: 400 })
     }
-    const upstreamBase = 'https://localhost:32773/'
+    const upstreamBase = 'http://busable-alb-a-423510266.us-west-2.elb.amazonaws.com/' //'https://localhost:32773/'
     const upstream = new URL(endpointParam, upstreamBase)
 
     // Call upstream service exactly with the provided values (no auto-swapping or assumptions).
