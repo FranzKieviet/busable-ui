@@ -6,16 +6,21 @@ import BusStopsList from "./BusStopsList"
 import PlacesList from "./PlacesList"
 import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from "@/context/PlacesContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FormControlLabel, Switch, Typography } from "@mui/material"
 
 type DisplayKind = 'stops' | 'places' | 'routes'
 
 export default function LeftOverlay() {
-  const { setStops, setSearchedLocation, searchedLocation, refreshStops, uniqueOnly, setUniqueOnly } = useBusStops()
+  const { setStops, setSearchedLocation, searchedLocation, refreshStops, uniqueOnly, setUniqueOnly, highlightedStopId } = useBusStops()
   const { setPlaces, refreshPlaces } = usePlaces()
   // Searching an address refreshes whichever list is showing, so the overlay stays on the current tab
   const [displayItems, setDisplayItems] = useState<DisplayKind>('stops')
+
+  // Clicking a stop on the map should reveal it in the list
+  useEffect(() => {
+    if (highlightedStopId) setDisplayItems('stops')
+  }, [highlightedStopId])
 
   function handleClose() {
     // clear stops and searched location when overlay close is clicked

@@ -61,6 +61,9 @@ type Ctx = {
   // when true, stop searches send uniqueOnly=true to the API
   uniqueOnly: boolean
   setUniqueOnly: (v: boolean) => void
+  // stop picked on the map that the list should scroll to and flash; cleared once handled
+  highlightedStopId: string | null
+  setHighlightedStopId: (id: string | null) => void
   // the last searched location (stored as [lon, lat]) when a location search was performed
   searchedLocation?: [number, number] | null
   setSearchedLocation?: (v: [number, number] | null) => void
@@ -76,6 +79,7 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [searchedLocation, setSearchedLocation] = useState<[number, number] | null>(null)
   const [uniqueOnly, setUniqueOnly] = useState(false)
+  const [highlightedStopId, setHighlightedStopId] = useState<string | null>(null)
 
   async function refreshStops(opts?: { lat?: number; lon?: number; uniqueOnly?: boolean }) {
     setLoading(true)
@@ -133,7 +137,7 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <BusStopsContext.Provider value={{ stops, setStops, refreshStops, uniqueOnly, setUniqueOnly, loading, searchedLocation, setSearchedLocation }}>
+    <BusStopsContext.Provider value={{ stops, setStops, refreshStops, uniqueOnly, setUniqueOnly, highlightedStopId, setHighlightedStopId, loading, searchedLocation, setSearchedLocation }}>
       {children}
     </BusStopsContext.Provider>
   )

@@ -16,7 +16,7 @@ type Props = {
 const BUS_ICON_PATH = 'M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17m9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5m1.5-6H6V6h12z'
 
 // Bus stop marker: white bus icon in a navy circle
-function addStopMarker(map: any, s: { coords: [number, number]; name: string }) {
+function addStopMarker(map: any, s: { coords: [number, number]; name: string }, onClick: () => void) {
   const el = document.createElement('div')
   el.style.width = '26px'
   el.style.height = '26px'
@@ -30,6 +30,7 @@ function addStopMarker(map: any, s: { coords: [number, number]; name: string }) 
   el.style.cursor = 'pointer'
   el.title = s.name
   el.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="white" aria-hidden="true"><path d="${BUS_ICON_PATH}"/></svg>`
+  el.addEventListener('click', onClick)
 
   return new (maplibregl as any).Marker({ element: el })
     .setLngLat(s.coords)
@@ -44,8 +45,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
   const [loaded, setLoaded] = useState(false)
   const mapRef = useRef<any>(null)
   const markersRef = useRef<Record<string, any>>({})
-  const { stops } = useBusStops()
-  const { searchedLocation } = useBusStops()
+  const { stops, searchedLocation, setHighlightedStopId } = useBusStops()
   const { places } = usePlaces()
   const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY
 
@@ -132,7 +132,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     // Add new markers for stops (only when places are not showing)
     stops.forEach((s) => {
       if (markersRef.current[s.id]) return
-      markersRef.current[s.id] = addStopMarker(map, s)
+      markersRef.current[s.id] = addStopMarker(map, s, () => setHighlightedStopId(s.id))
     })
 
     // Remove markers for stops that no longer exist
@@ -199,7 +199,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
       // Iterate `stops` from bus context and add markers if missing
       stops.forEach((s) => {
         if (markersRef.current[s.id]) return
-        markersRef.current[s.id] = addStopMarker(map, s)
+        markersRef.current[s.id] = addStopMarker(map, s, () => setHighlightedStopId(s.id))
       })
       return
     }

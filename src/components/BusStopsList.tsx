@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useRef, useState } from "react"
 import Image, { type StaticImageData } from "next/image"
 import { Box, ButtonBase, CircularProgress, Stack, Typography } from "@mui/material"
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined"
@@ -64,13 +64,20 @@ function RouteBadge({ route }: { route: BusRoute }) {
   )
 }
 
-function BusStopCard({ stop, onSelect }: { stop: BusStop; onSelect?: (s: BusStop) => void }) {
+type CardProps = {
+  stop: BusStop
+  onSelect?: (s: BusStop) => void
+  cardRef?: (el: HTMLElement | null) => void
+}
+
+function BusStopCard({ stop, onSelect, cardRef }: CardProps) {
   const routes = uniqueRoutes(stop.routes_served)
   const [lon, lat] = stop.coords
   const agencyLogo = stop.agency ? AGENCY_LOGOS[stop.agency] : undefined
 
   return (
     <ButtonBase
+      ref={cardRef}
       onClick={() => onSelect?.(stop)}
       sx={{
         display: 'block',
@@ -78,6 +85,8 @@ function BusStopCard({ stop, onSelect }: { stop: BusStop; onSelect?: (s: BusStop
         textAlign: 'left',
         position: 'relative',
         p: 2,
+        // gap above the card when it's scrolled to the top of the panel
+        scrollMarginTop: '16px',
         borderRadius: 3,
         bgcolor: 'background.paper',
         border: '1px solid',
@@ -133,7 +142,31 @@ function BusStopCard({ stop, onSelect }: { stop: BusStop; onSelect?: (s: BusStop
 }
 
 export default function BusStopsList({ onSelect }: Props) {
-  const { stops, loading } = useBusStops()
+  const { stops, loading, highlightedStopId, setHighlightedStopId } = useBusStops()
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({})
+  // Blank space under the list so even the last card can scroll up to the top of the panel.
+  // Only added once a stop has been picked on the map, so normal browsing has no empty tail.
+  const [showSpacer, setShowSpacer] = useState(false)
+
+  // When a stop is clicked on the map: scroll its card to the top of the panel and flash it
+  useEffect(() => {
+    if (!highlightedStopId || loading) return
+    // Render the spacer first; this effect runs again once it's in the DOM
+    if (!showSpacer) {
+      setShowSpacer(true)
+      return
+    }
+    const el = cardRefs.current[highlightedStopId]
+    setHighlightedStopId(null)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const { backgroundColor, borderColor } = getComputedStyle(el)
+    const resting = { backgroundColor, borderColor }
+    el.animate(
+      [resting, { backgroundColor: 'rgba(66,165,245,0.25)', borderColor: '#42a5f5' }, resting],
+      { duration: 450, iterations: 3, easing: 'ease-in-out', delay: 250 },
+    )
+  }, [highlightedStopId, loading, showSpacer, setHighlightedStopId])
 
   return (
     <Box>
@@ -160,8 +193,15 @@ export default function BusStopsList({ onSelect }: Props) {
       ) : (
         <Stack spacing={1.25}>
           {stops.map((s) => (
-            <BusStopCard key={s.id} stop={s} onSelect={onSelect} />
+            <BusStopCard
+              key={s.id}
+              stop={s}
+              onSelect={onSelect}
+              cardRef={(el) => { cardRefs.current[s.id] = el }}
+            />
           ))}
+          {/* Roughly the panel's visible height minus one card */}
+          {showSpacer && <Box aria-hidden sx={{ height: 'calc(100vh - 200px)' }} />}
         </Stack>
       )}
     </Box>
