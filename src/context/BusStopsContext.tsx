@@ -3,13 +3,51 @@
 import React, { createContext, useContext, useState } from "react"
 import { getLogger } from '@/lib/logger'
 
+export type BusRoute = {
+  route_id: string
+  route_short_name: string
+  route_long_name: string
+  route_color?: string
+}
+
 export type BusStop = {
   id: string
   name: string
   coords: [number, number]
   // optional fields returned by the upstream API
   distanceM?: number
-  routes?: string[]
+  routes_served?: BusRoute[]
+  // transit agency slug, e.g. "ac-transit"
+  agency?: string
+}
+
+// `agency` may come back as a plain id/name or as an object; reduce it to a slug like "ac-transit"
+function parseAgency(raw: any): string | undefined {
+  const value = typeof raw === 'string' ? raw : raw?.agency_id ?? raw?.id ?? raw?.agency_name ?? raw?.name
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  return value.trim().toLowerCase().replace(/[\s_]+/g, '-')
+}
+
+// Routes arrive either as objects ({ id, shortName, longName, color }) or, from older API
+// versions, as JSON-encoded strings with snake_case keys. Normalise to BusRoute[] and drop
+// anything unparseable.
+function parseRoutes(raw: unknown): BusRoute[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap((r) => {
+    try {
+      const obj = typeof r === 'string' ? JSON.parse(r) : r
+      const shortName = obj?.shortName ?? obj?.route_short_name
+      if (typeof shortName !== 'string') return []
+      return [{
+        route_id: obj.id ?? obj.route_id,
+        route_short_name: shortName,
+        route_long_name: obj.longName ?? obj.route_long_name ?? '',
+        route_color: obj.color ?? obj.route_color,
+      }]
+    } catch {
+      return []
+    }
+  })
 }
 
 //Shape of the context value
@@ -56,7 +94,8 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
           name: s.name,
           coords: s.coords || [s.longitude ?? s.lon ?? 0, s.latitude ?? s.lat ?? 0],
           distanceM: s.distanceM,
-          routes: s.routes,
+          routes_served: parseRoutes(s.routes_served ?? s.routes),
+          agency: parseAgency(s.agency),
         }))
       } else if (raw && Array.isArray(raw.busStops)) {
         // sample API shape { busStops: [ { longitude, latitude, ... } ], uniqueRoutes, ... }
@@ -65,7 +104,8 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
           name: b.name,
           coords: [b.longitude, b.latitude],
           distanceM: b.distanceM,
-          routes: b.routes,
+          routes_served: parseRoutes(b.routes_served ?? b.routes),
+          agency: parseAgency(b.agency),
         }))
       } else {
         console.warn('Unknown stops payload', raw)

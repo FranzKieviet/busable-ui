@@ -12,6 +12,31 @@ type Props = {
   zoom?: number
 }
 
+// Material "DirectionsBus" glyph
+const BUS_ICON_PATH = 'M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17m9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5m1.5-6H6V6h12z'
+
+// Bus stop marker: white bus icon in a navy circle
+function addStopMarker(map: any, s: { coords: [number, number]; name: string }) {
+  const el = document.createElement('div')
+  el.style.width = '26px'
+  el.style.height = '26px'
+  el.style.borderRadius = '50%'
+  el.style.background = '#1e3a8a'
+  el.style.border = '2px solid white'
+  el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.4)'
+  el.style.display = 'flex'
+  el.style.alignItems = 'center'
+  el.style.justifyContent = 'center'
+  el.style.cursor = 'pointer'
+  el.title = s.name
+  el.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="white" aria-hidden="true"><path d="${BUS_ICON_PATH}"/></svg>`
+
+  return new (maplibregl as any).Marker({ element: el })
+    .setLngLat(s.coords)
+    .setPopup(new (maplibregl as any).Popup({ offset: 16 }).setText(s.name))
+    .addTo(map)
+}
+
 // Default to UC Berkeley Campanile so the marker is visible by default
 export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props) {
   const mapEl = useRef<HTMLDivElement | null>(null)
@@ -107,11 +132,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     // Add new markers for stops (only when places are not showing)
     stops.forEach((s) => {
       if (markersRef.current[s.id]) return
-      const m = new (maplibregl as any).Marker()
-        .setLngLat(s.coords)
-        .setPopup(new (maplibregl as any).Popup({ offset: 25 }).setText(s.name))
-        .addTo(map)
-      markersRef.current[s.id] = m
+      markersRef.current[s.id] = addStopMarker(map, s)
     })
 
     // Remove markers for stops that no longer exist
@@ -176,13 +197,9 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
 
       // Re-add stop markers if any stops exist (since we removed them when places showed)
       // Iterate `stops` from bus context and add markers if missing
-      stops.forEach((s: any) => {
+      stops.forEach((s) => {
         if (markersRef.current[s.id]) return
-        const m = new (maplibregl as any).Marker()
-          .setLngLat(s.coords)
-          .setPopup(new (maplibregl as any).Popup({ offset: 25 }).setText(s.name))
-          .addTo(map)
-        markersRef.current[s.id] = m
+        markersRef.current[s.id] = addStopMarker(map, s)
       })
       return
     }
