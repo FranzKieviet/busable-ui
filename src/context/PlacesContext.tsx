@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react"
 import { useBusStops } from './BusStopsContext'
+import logger, { getLogger } from '@/lib/logger'
 
 export type Place = {
   id: string
@@ -34,9 +35,11 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false)
   const [searchedLocation, setSearchedLocation] = useState<[number, number] | null>(null)
   const { searchedLocation: busSearchedLocation } = useBusStops() || {}
+  const log = getLogger('PlacesProvider')
 
   async function refreshPlaces(opts?: { lat?: number; lon?: number }) {
     setLoading(true)
+    log.debug('refreshPlaces called with', opts)
     try {
       // Build the upstream path + query (client-side) and send it to the server for proxying.
       const endpointBase = 'places/nearest'
@@ -46,9 +49,11 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
       const endpointFull = endpointBase + (epParams.toString() ? `?${epParams.toString()}` : '')
 
       const url = `/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
+      log.debug('refreshPlaces will fetch', url)
       const res = await fetch(url)
       if (!res.ok) throw new Error(await res.text())
       const raw = await res.json()
+      log.debug('raw response snapshot:', Array.isArray(raw) ? raw.slice(0, 5) : (raw && typeof raw === 'object' ? Object.fromEntries(Object.entries(raw).slice(0,5)) : raw))
       let mapped: Place[] = []
 
       // Helper to normalize an upstream item into Place
@@ -72,16 +77,16 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
       if (candidates) {
         mapped = candidates.map((s: any) => toPlace(s))
       } else {
-        console.warn('Unknown places payload — keys:', Object.keys(raw || {}), raw)
+        getLogger('PlacesProvider').warn('Unknown places payload — keys:', Object.keys(raw || {}), raw)
       }
       setPlaces(mapped)
-      console.debug('[PlacesProvider] fetched', mapped.length, 'places')
+      getLogger('PlacesProvider').debug('fetched', mapped.length, 'places')
       // record searched location when explicit lat/lon provided
       if (typeof opts?.lat === 'number' && typeof opts?.lon === 'number') {
         setSearchedLocation([opts.lon, opts.lat])
       }
     } catch (err) {
-      console.error('refreshPlaces error', err)
+      getLogger('PlacesProvider').error('refreshPlaces error', err)
     } finally {
       setLoading(false)
     }
@@ -90,6 +95,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
   // Sync places to the bus stops searched location: when bus context sets a searchedLocation,
   // fetch places for that location so both lists show the same area.
   useEffect(() => {
+    log.debug('busSearchedLocation changed', busSearchedLocation)
     if (!busSearchedLocation) return
     const [lon, lat] = busSearchedLocation
     // fire-and-forget; refreshPlaces handles its own errors
@@ -98,7 +104,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
         await refreshPlaces({ lat, lon })
         setSearchedLocation([lon, lat])
       } catch (err) {
-        console.warn('PlacesProvider: refreshPlaces on busSearchedLocation failed', err)
+        getLogger('PlacesProvider').warn('refreshPlaces on busSearchedLocation failed', err)
       }
     })()
   }, [busSearchedLocation])

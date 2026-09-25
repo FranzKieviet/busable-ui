@@ -5,6 +5,7 @@ import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from "@/context/PlacesContext"
 import * as maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
+import { getLogger } from '@/lib/logger'
 
 type Props = {
   center?: [number, number]
@@ -27,10 +28,6 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
 
   useEffect(() => {
     if (!mapEl.current) return
-    if (!cartoKey) {
-      setError('CARTO API key not found. Set NEXT_PUBLIC_CARTO_API_KEY in .env.local and restart the dev server.')
-      return
-    }
     let map
     try {
       const styleObj = {
@@ -60,13 +57,13 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         attributionControl: false,
       })
     } catch (err: any) {
-      console.error('Map init error', err)
+      getLogger('Map').error('Map init error', err)
       setError(String(err?.message ?? err))
       return
     }
 
     map.on('error', (e: any) => {
-      console.error('Map error', e)
+      getLogger('Map').error('Map error', e)
       setError('Map error — see console for details')
     })
 
@@ -82,15 +79,18 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         mapRef.current = null
       } catch (_) {}
     }
-  }, [center, zoom, cartoKey])
+  }, [center, zoom])
 
   // Sync markers with stops from context
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
 
+    getLogger('Map').debug('places changed, count=', places?.length)
+
     // If there are places visible, hide stop markers to avoid clutter.
     if (places && places.length > 0) {
+      getLogger('Map').debug('hiding stop markers because places present')
       // remove any existing stop markers (keys without 'place:' prefix and not searched marker)
       Object.keys(markersRef.current).forEach((id) => {
         if (id === '__searched_location') return
@@ -156,7 +156,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         const targetZoom = typeof currentZoom === 'number' && currentZoom > 14 ? currentZoom : 15
         map.flyTo({ center: searchedLocation, zoom: targetZoom, essential: true })
       } catch (err) {
-        console.warn('map center/flyTo failed', err)
+        getLogger('Map').warn('map center/flyTo failed', err)
       }
     }
   }, [searchedLocation])
@@ -204,7 +204,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
       el.style.width = '16px'
       el.style.height = '16px'
       el.style.borderRadius = '50%'
-      el.style.background = 'green'
+      el.style.background = 'red'
       el.style.border = '2px solid white'
       el.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)'
       el.title = p.name

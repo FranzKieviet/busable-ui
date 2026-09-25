@@ -1,6 +1,7 @@
 "use client" //This is used to ensure hooks like useStae/useContext run in the browser which is important becuase the context is a mutable runtime state
 
 import React, { createContext, useContext, useState } from "react"
+import { getLogger } from '@/lib/logger'
 
 export type BusStop = {
   id: string
@@ -70,12 +71,16 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
         console.warn('Unknown stops payload', raw)
       }
       setStops(mapped)
-      // record searched location when explicit lat/lon provided
-      if (typeof opts?.lat === 'number' && typeof opts?.lon === 'number') {
-        setSearchedLocation([opts.lon, opts.lat])
+      // record searched location when explicit lat/lon provided (coerce strings to numbers)
+      const latN = opts?.lat != null ? Number(opts.lat) : NaN
+      const lonN = opts?.lon != null ? Number(opts.lon) : NaN
+      if (Number.isFinite(latN) && Number.isFinite(lonN)) {
+        setSearchedLocation([lonN, latN])
+      } else {
+        getLogger('BusStopsProvider').warn('refreshStops: provided coords not numeric', opts)
       }
     } catch (err) {
-      console.error('refreshStops error', err)
+      getLogger('BusStopsProvider').error('refreshStops error', err)
     } finally {
       setLoading(false)
     }

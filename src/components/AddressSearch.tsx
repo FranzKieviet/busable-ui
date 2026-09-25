@@ -3,9 +3,16 @@
 import React, { useState, useRef } from "react"
 import { TextField, Autocomplete, CircularProgress } from "@mui/material"
 import { useBusStops } from "@/context/BusStopsContext"
+import { usePlaces } from '@/context/PlacesContext'
+import { getLogger } from '@/lib/logger'
 
-export default function AddressSearch() {
+type AddressSearchProps = {
+  mode?: 'stops' | 'places' | 'both'
+}
+
+export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
   const { refreshStops } = useBusStops()
+  const { refreshPlaces } = usePlaces()
   const [query, setQuery] = useState("")
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -47,6 +54,22 @@ export default function AddressSearch() {
     }
   }
 
+  async function handleSelect(_e: any, value: any) {
+    const sel = value as any
+    setOpen(false)
+      if (sel && sel.lat != null && sel.lon != null) {
+      const latNum = Number(sel.lat)
+      const lonNum = Number(sel.lon)
+      getLogger('AddressSearch').debug('selection', { lat: sel.lat, lon: sel.lon, latNum, lonNum })
+      const promises: Promise<any>[] = []
+      const shouldRefreshStops = mode === 'stops' || mode === 'both'
+      const shouldRefreshPlaces = mode === 'places' || mode === 'both'
+      if (shouldRefreshStops && refreshStops) promises.push(refreshStops({ lat: latNum, lon: lonNum }))
+      if (shouldRefreshPlaces && refreshPlaces) promises.push(refreshPlaces({ lat: latNum, lon: lonNum }))
+      if (promises.length > 0) await Promise.allSettled(promises)
+    }
+  }
+
   return (
     <Autocomplete
       freeSolo
@@ -64,13 +87,7 @@ export default function AddressSearch() {
         fetchTimer.current = window.setTimeout(() => fetchSuggestions(value), 300)
         if (value === '') setOpen(false)
       }}
-      onChange={(_, value) => {
-        const sel = value as any
-        setOpen(false)
-        if (sel && sel.lat && sel.lon) {
-          if (refreshStops) refreshStops({ lat: sel.lat, lon: sel.lon })
-        }
-      }}
+      onChange={handleSelect}
       renderOption={(props, option: any) => (
         <li {...props} key={`${option.label}-${option.lat}-${option.lon}`}>
           <div>

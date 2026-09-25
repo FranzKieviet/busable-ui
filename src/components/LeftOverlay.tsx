@@ -6,7 +6,7 @@ import BusStopsList from "./BusStopsList"
 import PlacesList from "./PlacesList"
 import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from "@/context/PlacesContext"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type DisplayKind = 'stops' | 'places' | 'routes'
 
@@ -14,6 +14,12 @@ export default function LeftOverlay() {
   const { setStops, setSearchedLocation, searchedLocation } = useBusStops()
   const { setPlaces, refreshPlaces } = usePlaces()
   const [displayItems, setDisplayItems] = useState<DisplayKind>('stops')
+  
+  // When a searched location is set (from the search bar), switch the overlay
+  // to show places so the user sees the results immediately.
+  useEffect(() => {
+    if (searchedLocation) setDisplayItems('places')
+  }, [searchedLocation])
     
 
   function handleClose() {
@@ -48,7 +54,8 @@ export default function LeftOverlay() {
       onCloseClick={handleClose}
     >
       <div style={{ marginBottom: 8 }}>
-        <AddressSearch />
+        {/* Only refresh places when overlay is showing places; otherwise refresh stops */}
+        <AddressSearch mode={displayItems === 'places' ? 'places' : displayItems === 'stops' ? 'stops' : 'both'} />
       </div>
 
       <div>
