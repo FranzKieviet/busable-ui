@@ -18,8 +18,11 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const fetchTimer = useRef<number | null>(null)
+  // Incremented per request (and on selection) so late responses can't reopen the dropdown
+  const requestId = useRef(0)
 
   async function fetchSuggestions(text: string) {
+    const id = ++requestId.current
     const key = process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY
     if (!text || !key) {
       setSuggestions([])
@@ -30,6 +33,7 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
       const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&limit=6&format=json&lang=en&apiKey=${key}`
       const res = await fetch(url)
       const textRes = await res.text()
+      if (id !== requestId.current) return
       if (!res.ok) {
         setSuggestions([])
         return
@@ -50,12 +54,16 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
       console.warn('geoapify suggestions error', err)
       setSuggestions([])
     } finally {
-      setSuggestionsLoading(false)
+      if (id === requestId.current) setSuggestionsLoading(false)
     }
   }
 
   async function handleSelect(_e: any, value: any) {
     const sel = value as any
+    // Cancel any pending or in-flight suggestion lookup so it can't reopen the list
+    if (fetchTimer.current) window.clearTimeout(fetchTimer.current)
+    requestId.current++
+    setSuggestionsLoading(false)
     setOpen(false)
       if (sel && sel.lat != null && sel.lon != null) {
       const latNum = Number(sel.lat)
@@ -81,11 +89,13 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
       autoHighlight
       autoComplete
       getOptionLabel={(opt) => (typeof opt === 'string' ? opt : opt.label || '')}
-      onInputChange={(e, value) => {
+      onInputChange={(_e, value, reason) => {
         setQuery(value)
+        if (value === '') setOpen(false)
+        // Only look up suggestions for typed text; selecting an option also fills the input
+        if (reason !== 'input') return
         if (fetchTimer.current) window.clearTimeout(fetchTimer.current)
         fetchTimer.current = window.setTimeout(() => fetchSuggestions(value), 300)
-        if (value === '') setOpen(false)
       }}
       onChange={handleSelect}
       renderOption={(props, option: any) => (

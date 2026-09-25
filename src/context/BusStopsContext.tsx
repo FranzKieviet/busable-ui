@@ -56,7 +56,11 @@ type Ctx = {
   // React state updater function that either accepts a new array of busStops or will accept the previous state and return a new array of busStops
   setStops: React.Dispatch<React.SetStateAction<BusStop[]>>
   // refreshStops allows consumers to request stops from the server (options: lat, lon)
-  refreshStops?: (opts?: { lat?: number; lon?: number }) => Promise<void>
+  // uniqueOnly overrides the context value for this call (useful right after toggling it)
+  refreshStops?: (opts?: { lat?: number; lon?: number; uniqueOnly?: boolean }) => Promise<void>
+  // when true, stop searches send uniqueOnly=true to the API
+  uniqueOnly: boolean
+  setUniqueOnly: (v: boolean) => void
   // the last searched location (stored as [lon, lat]) when a location search was performed
   searchedLocation?: [number, number] | null
   setSearchedLocation?: (v: [number, number] | null) => void
@@ -71,15 +75,17 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
   const [stops, setStops] = useState<BusStop[]>([])
   const [loading, setLoading] = useState(false)
   const [searchedLocation, setSearchedLocation] = useState<[number, number] | null>(null)
+  const [uniqueOnly, setUniqueOnly] = useState(false)
 
-  async function refreshStops(opts?: { lat?: number; lon?: number }) {
+  async function refreshStops(opts?: { lat?: number; lon?: number; uniqueOnly?: boolean }) {
     setLoading(true)
     try {
       // Build the upstream path + query (client-side) and send it to the server for proxying.
-      const endpointBase = 'bus-stops/nearest-stops-by-line'
+      const endpointBase = 'bus-stops/nearest-stops'
       const epParams = new URLSearchParams()
       if (typeof opts?.lat === 'number') epParams.set('latitude', String(opts.lat))
       if (typeof opts?.lon === 'number') epParams.set('longitude', String(opts.lon))
+      if (opts?.uniqueOnly ?? uniqueOnly) epParams.set('uniqueOnly', 'true')
       const endpointFull = endpointBase + (epParams.toString() ? `?${epParams.toString()}` : '')
 
       const url = `/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
@@ -127,7 +133,7 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <BusStopsContext.Provider value={{ stops, setStops, refreshStops, loading, searchedLocation, setSearchedLocation }}>
+    <BusStopsContext.Provider value={{ stops, setStops, refreshStops, uniqueOnly, setUniqueOnly, loading, searchedLocation, setSearchedLocation }}>
       {children}
     </BusStopsContext.Provider>
   )

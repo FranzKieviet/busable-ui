@@ -7,11 +7,12 @@ import PlacesList from "./PlacesList"
 import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from "@/context/PlacesContext"
 import { useState } from "react"
+import { FormControlLabel, Switch, Typography } from "@mui/material"
 
 type DisplayKind = 'stops' | 'places' | 'routes'
 
 export default function LeftOverlay() {
-  const { setStops, setSearchedLocation, searchedLocation } = useBusStops()
+  const { setStops, setSearchedLocation, searchedLocation, refreshStops, uniqueOnly, setUniqueOnly } = useBusStops()
   const { setPlaces, refreshPlaces } = usePlaces()
   // Searching an address refreshes whichever list is showing, so the overlay stays on the current tab
   const [displayItems, setDisplayItems] = useState<DisplayKind>('stops')
@@ -50,6 +51,27 @@ export default function LeftOverlay() {
       <div style={{ marginBottom: 8 }}>
         {/* Only refresh places when overlay is showing places; otherwise refresh stops */}
         <AddressSearch mode={displayItems === 'places' ? 'places' : displayItems === 'stops' ? 'stops' : 'both'} />
+        {displayItems === 'stops' && (
+          <FormControlLabel
+            sx={{ mt: 0.5, ml: 0 }}
+            label={<Typography variant="body2">Unique routes only</Typography>}
+            control={
+              <Switch
+                size="small"
+                checked={uniqueOnly}
+                onChange={(e) => {
+                  const value = e.target.checked
+                  setUniqueOnly(value)
+                  // Re-run the current search so the list reflects the new setting
+                  if (searchedLocation && refreshStops) {
+                    const [lon, lat] = searchedLocation
+                    refreshStops({ lat, lon, uniqueOnly: value })
+                  }
+                }}
+              />
+            }
+          />
+        )}
       </div>
 
       <div>
