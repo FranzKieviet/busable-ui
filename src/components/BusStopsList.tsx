@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 import Image, { type StaticImageData } from "next/image"
 import { Box, CircularProgress, Stack, Typography } from "@mui/material"
 import DirectionsBusOutlinedIcon from "@mui/icons-material/DirectionsBusOutlined"
@@ -10,6 +10,7 @@ import { usePlaces } from "@/context/PlacesContext"
 import { ListCard, CoordsLine } from "./ListCard"
 import RouteBadge, { routeKey } from "./RouteBadge"
 import { useScrollToCard, SCROLL_SPACER_HEIGHT } from "@/lib/useScrollToCard"
+import HelpTip from "./HelpTip"
 import acTransitLogo from "@/assests/logos/ac-transit.webp"
 
 // Agency slug (from the API's `agency` field) -> logo. Add new agencies here.
@@ -22,7 +23,7 @@ type Props = {
 }
 
 // Agency logo width (logos are wide; their files are trimmed to the artwork) and the label's side padding
-const LOGO_WIDTH = 64
+const LOGO_WIDTH = 54
 const LOGO_PAD_X = 6
 // Space the route badges leave on the right for the logo label
 const LOGO_SLOT = LOGO_WIDTH + LOGO_PAD_X * 2
@@ -94,6 +95,13 @@ export default function BusStopsList({ onSelect }: Props) {
     setHighlightedStopId(null)
   }
 
+  // The route help tip points at the first stop card once stops have loaded
+  const [listEl, setListEl] = useState<HTMLDivElement | null>(null)
+  const [firstCardEl, setFirstCardEl] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    setFirstCardEl((listEl?.firstElementChild as HTMLElement | null) ?? null)
+  }, [listEl, stops])
+
   return (
     <Box sx={{ mt: 1 }}>
       {loading ? (
@@ -106,7 +114,7 @@ export default function BusStopsList({ onSelect }: Props) {
           <Typography variant="body2">Search a California address to see nearby bus stops.</Typography>
         </Stack>
       ) : (
-        <Stack spacing={1.25}>
+        <Stack spacing={1.25} ref={setListEl}>
           {stops.map((s) => (
             <BusStopCard
               key={s.id}
@@ -118,6 +126,9 @@ export default function BusStopsList({ onSelect }: Props) {
           {showSpacer && <Box aria-hidden sx={{ height: SCROLL_SPACER_HEIGHT }} />}
         </Stack>
       )}
+      <HelpTip id="routes" anchorEl={firstCardEl} placement="right" show={!loading && stops.length > 0}>
+        Click on a route to see places accessible from this stop by that line.
+      </HelpTip>
     </Box>
   )
 }

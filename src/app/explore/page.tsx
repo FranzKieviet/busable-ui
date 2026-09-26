@@ -16,7 +16,7 @@ export default function Home() {
     <ThemeProvider theme={exploreTheme}>
       <BusStopsProvider>
         <Box sx={{ minHeight: "100vh", bgcolor: NAVY, color: "text.primary" }}>
-          <Navbar title="Busable" />
+          <Navbar title="Busable" titleColor={NAVY} />
 
           <Map center={[-122.2578, 37.8721]} zoom={15} />
 

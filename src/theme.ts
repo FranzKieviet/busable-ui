@@ -19,7 +19,7 @@ export const exploreTheme = createTheme({
   palette: {
     mode: "dark",
     primary: { main: ACCENT },
-    background: { default: NAVY, paper: "#14305f" },
+    background: { default: NAVY, paper: "#28508c" },
     text: { primary: "#ffffff", secondary: "rgba(255,255,255,0.7)" },
     divider: "rgba(255,255,255,0.12)",
   },

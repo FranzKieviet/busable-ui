@@ -58,7 +58,7 @@ function DirectionsLink({ place, origin }: { place: Place; origin?: [number, num
       underline="hover"
       // don't also trigger the card's onSelect
       onClick={(e) => e.stopPropagation()}
-      sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#42a5f5', fontSize: 14 }}
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#8ad4ff', fontSize: 14 }}
     >
       <DirectionsTransitIcon sx={{ fontSize: 16 }} />
       Open in Google Maps

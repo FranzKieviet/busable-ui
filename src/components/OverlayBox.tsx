@@ -1,6 +1,6 @@
 "use client"
 
-import React, { ReactNode, useState } from "react"
+import React, { ReactNode, createContext, useState } from "react"
 import { Box, ButtonBase, IconButton, Typography } from "@mui/material"
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
@@ -30,6 +30,9 @@ type Props = {
   collapsible?: boolean
 }
 
+// Lets content inside a panel know when it's slid off-screen (e.g. help tips hide with it)
+export const PanelCollapsedContext = createContext(false)
+
 const PANEL_BORDER = "1px solid rgba(255,255,255,0.1)"
 
 // Thin, rounded scrollbar that suits the dark panels (standard props for Firefox/new Chrome,
@@ -57,8 +60,8 @@ export default function OverlayBox({
   bottom,
   width = 320,
   zIndex = 1000,
-  // dark navy panel (the welcome page's NAVY at 95% opacity)
-  bgcolor = "rgba(10,31,68,0.95)",
+  // medium navy-blue panel, a step lighter than the welcome page's NAVY
+  bgcolor = "rgba(28,61,115,0.95)",
   sx,
   ariaLabel,
   title,
@@ -112,7 +115,7 @@ export default function OverlayBox({
             color: "text.secondary",
             boxShadow: 3,
             transition: "color 150ms, background-color 150ms",
-            "&:hover": { color: "text.primary", bgcolor: "rgba(20,48,95,0.98)" },
+            "&:hover": { color: "text.primary", bgcolor: "rgba(40,80,140,0.98)" },
           }}
         >
           <ChevronIcon fontSize="small" />
@@ -166,7 +169,7 @@ export default function OverlayBox({
           )}
         </Box>
       )}
-      {children}
+      <PanelCollapsedContext.Provider value={collapsed}>{children}</PanelCollapsedContext.Provider>
       </Box>
     </Box>
   )

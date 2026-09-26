@@ -60,7 +60,7 @@ export function ListCard({ title, corner, cornerWidth = 32, children, onClick, c
 export function CoordsLine({ coords }: { coords: [number, number] }) {
   const [lon, lat] = coords
   return (
-    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mt: 0.5, color: '#42a5f5' }}>
+    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mt: 0.5, color: '#8ad4ff' }}>
       <PlaceOutlinedIcon sx={{ fontSize: 16 }} />
       <Typography variant="body2" sx={{ fontVariantNumeric: 'tabular-nums' }}>
         {lat.toFixed(5)}, {lon.toFixed(5)}

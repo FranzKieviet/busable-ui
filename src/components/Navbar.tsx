@@ -33,9 +33,11 @@ const navButtonStyle = {
 type Props = {
   // optional name shown next to the logo (the welcome page has its own big heading, so it leaves this off)
   title?: string
+  // title text color: white suits dark backgrounds; pass navy over the light map
+  titleColor?: string
 }
 
-export default function Navbar({ title }: Props) {
+export default function Navbar({ title, titleColor = "#fff" }: Props) {
   return (
     <AppBar
       position="fixed"
@@ -59,7 +61,7 @@ export default function Navbar({ title }: Props) {
           }}
         >
           <Image
-              src="/franz-logo-bart-theme.png"
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH}/franz-logo-bart-theme.png`}
               alt="Logo"
               width={34}
               height={34}
@@ -68,7 +70,16 @@ export default function Navbar({ title }: Props) {
         {title && (
           <Typography
             component="span"
-            sx={{ ml: 1.5, color: "#fff", fontFamily: "Univers, sans-serif", fontWeight: 600, fontSize: 24, letterSpacing: "-0.02em", textShadow: "0 1px 4px rgba(0,0,0,0.35)" }}
+            sx={{
+              ml: 1.5,
+              color: titleColor,
+              fontFamily: "Univers, sans-serif",
+              fontWeight: 600,
+              fontSize: 24,
+              letterSpacing: "-0.02em",
+              // soft halo in the opposite tone keeps the title readable over busy map areas
+              textShadow: titleColor === "#fff" ? "0 1px 4px rgba(0,0,0,0.35)" : "0 0 6px rgba(255,255,255,0.9)",
+            }}
           >
             {title}
           </Typography>

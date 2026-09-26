@@ -6,7 +6,8 @@ import BusStopsList from "./BusStopsList"
 import { useBusStops } from "@/context/BusStopsContext"
 import { FormControlLabel, Switch, Typography } from "@mui/material"
 import { useSearchParams } from "next/navigation"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import HelpTip from "./HelpTip"
 
 export default function LeftOverlay() {
   const { stops, searchedLocation, refreshStops, uniqueOnly, setUniqueOnly } = useBusStops()
@@ -17,6 +18,8 @@ export default function LeftOverlay() {
   const initialLat = Number(params.get('lat'))
   const initialLon = Number(params.get('lon'))
   const loadedFromUrl = useRef(false)
+  // anchor for the search help tip
+  const [searchEl, setSearchEl] = useState<HTMLDivElement | null>(null)
 
   // Load stops for that address once when the page opens
   useEffect(() => {
@@ -38,7 +41,12 @@ export default function LeftOverlay() {
       titleAside={stops.length > 0 ? `${stops.length} found` : undefined}
     >
       <div style={{ marginBottom: 8 }}>
-        <AddressSearch mode="stops" initialQuery={initialQuery} />
+        <div ref={setSearchEl}>
+          <AddressSearch mode="stops" initialQuery={initialQuery} />
+        </div>
+        <HelpTip id="search" anchorEl={searchEl} placement="right">
+          Search for your address here to see all the bus stops near you.
+        </HelpTip>
         <FormControlLabel
           sx={{ mt: 0.5, ml: 0 }}
           label={<Typography variant="body2">Unique routes only</Typography>}

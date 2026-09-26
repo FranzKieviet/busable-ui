@@ -1,7 +1,8 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { Box, Chip } from "@mui/material"
+import HelpTip from "./HelpTip"
 import { usePlaces } from "@/context/PlacesContext"
 import { PLACE_CATEGORIES } from "@/lib/placeCategories"
 
@@ -12,8 +13,15 @@ export default function PlaceCategoryFilter() {
   const counts: Record<string, number> = {}
   for (const p of places) counts[p.group] = (counts[p.group] ?? 0) + 1
 
+  // anchor for the filter help tip
+  const [chipsEl, setChipsEl] = useState<HTMLDivElement | null>(null)
+
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
+    <>
+    <HelpTip id="categories" anchorEl={chipsEl} placement="left" show={places.length > 0}>
+      Select or deselect categories here.
+    </HelpTip>
+    <Box ref={setChipsEl} sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 1.5 }}>
       {PLACE_CATEGORIES.map(({ id, label, color, Icon }) => {
         const on = enabledCategories.has(id)
         const count = counts[id] ?? 0
@@ -38,5 +46,6 @@ export default function PlaceCategoryFilter() {
         )
       })}
     </Box>
+    </>
   )
 }

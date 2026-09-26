@@ -136,7 +136,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     try {
       const epParams = new URLSearchParams({ stopId: selection.stopId, routeId: selection.routeId, distance: String(distance) })
-      const url = `/api/stops?endpoint=${encodeURIComponent(`places/downstream?${epParams.toString()}`)}`
+      const url = `${process.env.NEXT_PUBLIC_BASE_PATH}/api/stops?endpoint=${encodeURIComponent(`places/downstream?${epParams.toString()}`)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(await res.text())
       const raw = await res.json()
@@ -194,7 +194,7 @@ export function PlacesProvider({ children }: { children: React.ReactNode }) {
       if (typeof opts?.lon === 'number') epParams.set('longitude', String(opts.lon))
       const endpointFull = endpointBase + (epParams.toString() ? `?${epParams.toString()}` : '')
 
-      const url = `/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
+      const url = `${process.env.NEXT_PUBLIC_BASE_PATH}/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
       log.debug('refreshPlaces will fetch', url)
       const res = await fetch(url)
       if (!res.ok) throw new Error(await res.text())

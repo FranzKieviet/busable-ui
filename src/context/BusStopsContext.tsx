@@ -104,7 +104,7 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
       if (opts?.uniqueOnly ?? uniqueOnly) epParams.set('uniqueOnly', 'true')
       const endpointFull = endpointBase + (epParams.toString() ? `?${epParams.toString()}` : '')
 
-      const url = `/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
+      const url = `${process.env.NEXT_PUBLIC_BASE_PATH}/api/stops?endpoint=${encodeURIComponent(endpointFull)}`
       const res = await fetch(url)
       if (!res.ok) throw new Error(await res.text())
       const raw = await res.json()
