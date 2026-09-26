@@ -15,11 +15,6 @@ export default function PlacesList({ onSelect }: Props) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, flexDirection: 'column', marginBottom: 8 }}>
-        <h3 style={{ margin: 0 }}>Places</h3>
-      </div>
-      {/* Lat/Lon inputs removed — search by address now handles location searches */}
-
       <Divider />
       <List>
         {places.length === 0 && (

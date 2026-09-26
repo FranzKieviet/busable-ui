@@ -1,7 +1,7 @@
 "use client"
 
 import React, { ReactNode } from "react"
-import { Box, IconButton } from "@mui/material"
+import { Box, IconButton, Typography } from "@mui/material"
 import SignpostIcon from '@mui/icons-material/Signpost'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
 import CloseIcon from '@mui/icons-material/Close'
@@ -17,6 +17,9 @@ type Props = {
   bgcolor?: string
   sx?: any
   ariaLabel?: string
+  // panel title shown top-left, with optional secondary text (e.g. a result count) beside it
+  title?: ReactNode
+  titleAside?: ReactNode
   // optional callbacks for the three header buttons (rendered top-right)
   onBusStopsClick?: () => void
   onLocateClick?: () => void
@@ -34,6 +37,8 @@ export default function OverlayBox({
   bgcolor = "rgba(255,255,255,0.95)",
   sx,
   ariaLabel,
+  title,
+  titleAside,
   onBusStopsClick,
   onLocateClick,
   onCloseClick,
@@ -58,17 +63,37 @@ export default function OverlayBox({
       }}
       aria-label={ariaLabel}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mb: 1 }}>
-        <IconButton size="small" aria-label="bus stops" onClick={onBusStopsClick}>
-          <SignpostIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" aria-label="locate" onClick={onLocateClick}>
-          <MyLocationIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" aria-label="close" onClick={onCloseClick}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
+      {/* Header: title on the left; buttons on the right, each only shown when its callback is provided */}
+      {(title || onBusStopsClick || onLocateClick || onCloseClick) && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+          {title && (
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {title}
+            </Typography>
+          )}
+          {titleAside && (
+            <Typography variant="caption" color="text.secondary">
+              {titleAside}
+            </Typography>
+          )}
+          <Box sx={{ flex: 1 }} />
+          {onBusStopsClick && (
+            <IconButton size="small" aria-label="bus stops" onClick={onBusStopsClick}>
+              <SignpostIcon fontSize="small" />
+            </IconButton>
+          )}
+          {onLocateClick && (
+            <IconButton size="small" aria-label="locate" onClick={onLocateClick}>
+              <MyLocationIcon fontSize="small" />
+            </IconButton>
+          )}
+          {onCloseClick && (
+            <IconButton size="small" aria-label="close" onClick={onCloseClick}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      )}
       {children}
     </Box>
   )

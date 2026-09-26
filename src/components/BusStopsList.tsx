@@ -5,6 +5,8 @@ import Image, { type StaticImageData } from "next/image"
 import { Box, ButtonBase, CircularProgress, Stack, Typography } from "@mui/material"
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined"
 import DirectionsBusOutlinedIcon from "@mui/icons-material/DirectionsBusOutlined"
+import NorthEastIcon from "@mui/icons-material/NorthEast"
+import SouthWestIcon from "@mui/icons-material/SouthWest"
 import { useBusStops } from "@/context/BusStopsContext"
 import type { BusStop, BusRoute } from "@/context/BusStopsContext"
 import acTransitLogo from "@/assests/logos/ac-transit.webp"
@@ -32,23 +34,31 @@ function routeColor(r: BusRoute): string {
   return ROUTE_COLORS[h % ROUTE_COLORS.length]
 }
 
-// A stop can list both directions of a route (e.g. 51B_0 and 51B_1); show each bus number once
+const DIRECTION_LABELS = { 0: 'Outbound', 1: 'Inbound' } as const
+
+const routeKey = (r: BusRoute) => `${r.route_short_name}:${r.direction ?? ''}`
+
+// The API can list the same route/direction more than once; show each bus number + direction once
 function uniqueRoutes(routes: BusRoute[] = []): BusRoute[] {
   const seen = new Set<string>()
-  return routes.filter((r) => !seen.has(r.route_short_name) && seen.add(r.route_short_name))
+  return routes.filter((r) => !seen.has(routeKey(r)) && seen.add(routeKey(r)))
 }
 
 function RouteBadge({ route }: { route: BusRoute }) {
   const label = route.route_short_name
+  const color = routeColor(route)
+  const direction = route.direction != null ? DIRECTION_LABELS[route.direction] : undefined
+  const DirectionIcon = route.direction === 0 ? NorthEastIcon : SouthWestIcon
   return (
     <Box
-      title={route.route_long_name}
+      title={[label, direction, route.route_long_name].filter(Boolean).join(' · ')}
       sx={{
+        position: 'relative',
         minWidth: 30,
         height: 30,
         px: label.length > 2 ? 0.75 : 0,
         borderRadius: 999,
-        bgcolor: routeColor(route),
+        bgcolor: color,
         color: '#fff',
         display: 'inline-flex',
         alignItems: 'center',
@@ -60,6 +70,29 @@ function RouteBadge({ route }: { route: BusRoute }) {
       }}
     >
       {label}
+      {/* Direction pip: ↗ outbound, ↙ inbound */}
+      {direction && (
+        <Box
+          aria-label={direction}
+          sx={{
+            position: 'absolute',
+            right: -4,
+            bottom: -4,
+            width: 15,
+            height: 15,
+            borderRadius: '50%',
+            bgcolor: '#fff',
+            border: '1.5px solid',
+            borderColor: color,
+            color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <DirectionIcon sx={{ fontSize: 10 }} />
+        </Box>
+      )}
     </Box>
   )
 }
@@ -111,9 +144,9 @@ function BusStopCard({ stop, onSelect, cardRef }: CardProps) {
       </Stack>
 
       {/* Right padding keeps the badges clear of the agency logo slot */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1.5, pr: `${LOGO_SLOT + 8}px`, minHeight: LOGO_SLOT }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25, mt: 1.5, pr: `${LOGO_SLOT + 8}px`, minHeight: LOGO_SLOT }}>
         {routes.map((r) => (
-          <RouteBadge key={r.route_short_name} route={r} />
+          <RouteBadge key={routeKey(r)} route={r} />
         ))}
       </Box>
 
@@ -169,18 +202,7 @@ export default function BusStopsList({ onSelect }: Props) {
   }, [highlightedStopId, loading, showSpacer, setHighlightedStopId])
 
   return (
-    <Box>
-      <Stack direction="row" sx={{ alignItems: 'baseline', justifyContent: 'space-between', mb: 1.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Nearby Stops
-        </Typography>
-        {stops.length > 0 && (
-          <Typography variant="caption" color="text.secondary">
-            {stops.length} found
-          </Typography>
-        )}
-      </Stack>
-
+    <Box sx={{ mt: 1 }}>
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress size={28} />

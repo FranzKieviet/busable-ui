@@ -8,6 +8,16 @@ export type BusRoute = {
   route_short_name: string
   route_long_name: string
   route_color?: string
+  // GTFS direction_id: 0 = outbound, 1 = inbound (by convention; agencies define the exact meaning)
+  direction?: 0 | 1
+}
+
+// Prefer an explicit direction field; otherwise read the `_0` / `_1` suffix on the route id
+function parseDirection(obj: any, routeId: unknown): 0 | 1 | undefined {
+  const explicit = obj?.directionId ?? obj?.direction_id ?? obj?.direction
+  if (explicit === 0 || explicit === 1 || explicit === '0' || explicit === '1') return Number(explicit) as 0 | 1
+  const m = typeof routeId === 'string' ? routeId.match(/_([01])$/) : null
+  return m ? (Number(m[1]) as 0 | 1) : undefined
 }
 
 export type BusStop = {
@@ -38,11 +48,13 @@ function parseRoutes(raw: unknown): BusRoute[] {
       const obj = typeof r === 'string' ? JSON.parse(r) : r
       const shortName = obj?.shortName ?? obj?.route_short_name
       if (typeof shortName !== 'string') return []
+      const routeId = obj.id ?? obj.route_id
       return [{
-        route_id: obj.id ?? obj.route_id,
+        route_id: routeId,
         route_short_name: shortName,
         route_long_name: obj.longName ?? obj.route_long_name ?? '',
         route_color: obj.color ?? obj.route_color,
+        direction: parseDirection(obj, routeId),
       }]
     } catch {
       return []

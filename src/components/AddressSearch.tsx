@@ -11,8 +11,8 @@ type AddressSearchProps = {
 }
 
 export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
-  const { refreshStops } = useBusStops()
-  const { refreshPlaces } = usePlaces()
+  const { refreshStops, setStops, setSearchedLocation } = useBusStops()
+  const { refreshPlaces, setPlaces } = usePlaces()
   const [query, setQuery] = useState("")
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -58,6 +58,15 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
     }
   }
 
+  // Clear whatever this search box populates (mirrors the refresh logic in handleSelect)
+  function clearResults() {
+    if (mode === 'stops' || mode === 'both') {
+      setStops([])
+      if (setSearchedLocation) setSearchedLocation(null)
+    }
+    if (mode === 'places' || mode === 'both') setPlaces([])
+  }
+
   async function handleSelect(_e: any, value: any) {
     const sel = value as any
     // Cancel any pending or in-flight suggestion lookup so it can't reopen the list
@@ -91,7 +100,15 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
       getOptionLabel={(opt) => (typeof opt === 'string' ? opt : opt.label || '')}
       onInputChange={(_e, value, reason) => {
         setQuery(value)
-        if (value === '') setOpen(false)
+        if (value === '') {
+          // Search cleared (X button or text deleted): drop pending lookups and clear the results
+          if (fetchTimer.current) window.clearTimeout(fetchTimer.current)
+          requestId.current++
+          setSuggestions([])
+          setOpen(false)
+          clearResults()
+          return
+        }
         // Only look up suggestions for typed text; selecting an option also fills the input
         if (reason !== 'input') return
         if (fetchTimer.current) window.clearTimeout(fetchTimer.current)

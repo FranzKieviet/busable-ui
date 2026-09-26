@@ -4,6 +4,7 @@ import { Container, Box } from "@mui/material";
 import Navbar from "@/components/Navbar";
 import Map from "@/components/Map";
 import LeftOverlay from "@/components/LeftOverlay";
+import RightOverlay from "@/components/RightOverlay";
 import { BusStopsProvider } from "@/context/BusStopsContext";
 export default function Home() {
   return (
@@ -20,6 +21,9 @@ export default function Home() {
 
       {/* Left overlay to display Bus Stops */}
         <LeftOverlay />
+
+      {/* Right overlay to display Places */}
+        <RightOverlay />
       </Box>
     </BusStopsProvider>
   );
