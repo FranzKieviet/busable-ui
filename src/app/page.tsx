@@ -2,24 +2,29 @@
 
 import { Container, Box } from "@mui/material";
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
-import About from "@/components/About";
-
+import Map from "@/components/Map";
+import LeftOverlay from "@/components/LeftOverlay";
+import RightOverlay from "@/components/RightOverlay";
+import { BusStopsProvider } from "@/context/BusStopsContext";
 export default function Home() {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #ffffff, #0099D8)",
-      }}
-    >
+    <BusStopsProvider>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #ffffff, #0099D8)",
+        }}
+      >
       <Navbar />
 
-      <Container maxWidth="md" sx={{ mt: 10, textAlign: "center" }}>
-        <Hero />
-      </Container>
+      <Map center={[-122.2578, 37.8721]} zoom={15} />
 
-      <About />
-    </Box>
+      {/* Left overlay to display Bus Stops */}
+        <LeftOverlay />
+
+      {/* Right overlay to display Places */}
+        <RightOverlay />
+      </Box>
+    </BusStopsProvider>
   );
 }

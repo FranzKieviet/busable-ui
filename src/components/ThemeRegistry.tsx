@@ -3,6 +3,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { theme } from "@/theme";
+import { BusStopsProvider } from '@/context/BusStopsContext'
+import { PlacesProvider } from '@/context/PlacesContext'
 
 export default function ThemeRegistry({
   children,
@@ -12,7 +14,9 @@ export default function ThemeRegistry({
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      {children}
+      <BusStopsProvider>
+        <PlacesProvider>{children}</PlacesProvider>
+      </BusStopsProvider>
     </ThemeProvider>
   );
 }
