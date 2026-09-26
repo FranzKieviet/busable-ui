@@ -30,13 +30,18 @@ const navButtonStyle = {
   },
 };
 
-export default function Navbar() {
+type Props = {
+  // optional name shown next to the logo (the welcome page has its own big heading, so it leaves this off)
+  title?: string
+}
+
+export default function Navbar({ title }: Props) {
   return (
     <AppBar
       position="fixed"
       color="transparent"
       elevation={0}
-      sx={{ top: 0, zIndex: (theme) => theme.zIndex.appBar, backdropFilter: "blur(4px)" }}
+      sx={{ top: 0, zIndex: (theme) => theme.zIndex.appBar }}
     >
       <Toolbar>
         {/* LEFT SIDE (logo) on a white circle; the logo's own white background blends into it */}
@@ -60,6 +65,14 @@ export default function Navbar() {
               height={34}
           />
         </Box>
+        {title && (
+          <Typography
+            component="span"
+            sx={{ ml: 1.5, color: "#fff", fontFamily: "Univers, sans-serif", fontWeight: 600, fontSize: 24, letterSpacing: "-0.02em", textShadow: "0 1px 4px rgba(0,0,0,0.35)" }}
+          >
+            {title}
+          </Typography>
+        )}
 
       </Toolbar>
     </AppBar>

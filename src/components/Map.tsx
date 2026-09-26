@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css"
 import { getLogger } from '@/lib/logger'
 import { PLACE_CATEGORY_BY_ID } from '@/lib/placeCategories'
 import { routeColor } from './RouteBadge'
+import { NAVY } from '@/theme'
 
 type Props = {
   center?: [number, number]
@@ -110,16 +111,23 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
         sources: {
           rasterTiles: {
             type: 'raster',
-            // Carto Light with labels — shows street names
-            tiles: [`https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png?key=${cartoKey}`],
+            // Carto Dark Matter with labels — shows street names
+            tiles: [`https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`],
             tileSize: 256,
           },
         },
         layers: [
+          // Navy under slightly transparent dark tiles tints the grey map to the app's dark blue
+          {
+            id: 'navy-tint',
+            type: 'background',
+            paint: { 'background-color': NAVY },
+          },
           {
             id: 'base-tiles',
             type: 'raster',
             source: 'rasterTiles',
+            paint: { 'raster-opacity': 0.6 },
           },
         ],
       }

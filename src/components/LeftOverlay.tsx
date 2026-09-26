@@ -33,6 +33,7 @@ export default function LeftOverlay() {
       bottom={50}
       width={360}
       ariaLabel="left-overlay"
+      collapsible
       title="Nearby Stops"
       titleAside={stops.length > 0 ? `${stops.length} found` : undefined}
     >

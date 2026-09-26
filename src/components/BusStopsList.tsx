@@ -21,8 +21,11 @@ type Props = {
   onSelect?: (s: BusStop) => void
 }
 
-// Size of the reserved bottom-right slot for the agency logo
-const LOGO_SLOT = 40
+// Agency logo width (logos are wide; their files are trimmed to the artwork) and the label's side padding
+const LOGO_WIDTH = 64
+const LOGO_PAD_X = 6
+// Space the route badges leave on the right for the logo label
+const LOGO_SLOT = LOGO_WIDTH + LOGO_PAD_X * 2
 
 // The API can list the same route/direction more than once; show each bus number + direction once
 function uniqueRoutes(routes: BusRoute[] = []): BusRoute[] {
@@ -46,7 +49,7 @@ function BusStopCard({ stop, onSelect, cardRef }: CardProps) {
       <CoordsLine coords={stop.coords} />
 
       {/* Right padding keeps the badges clear of the agency logo slot */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25, mt: 1.5, pr: `${LOGO_SLOT + 8}px`, minHeight: LOGO_SLOT }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.25, mt: 1.5, pr: `${LOGO_SLOT + 8}px`, minHeight: 30 }}>
         {routes.map((r) => (
           <RouteBadge
             key={routeKey(r)}
@@ -63,17 +66,18 @@ function BusStopCard({ stop, onSelect, cardRef }: CardProps) {
             position: 'absolute',
             right: 16,
             bottom: 16,
-            width: LOGO_SLOT,
-            height: LOGO_SLOT,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            // light label that hugs the logo so dark agency logos stay readable on the dark card
+            bgcolor: 'rgba(255,255,255,0.92)',
+            borderRadius: 1,
+            px: `${LOGO_PAD_X}px`,
+            py: '4px',
           }}
         >
           <Image
             src={agencyLogo}
             alt={stop.agency ?? 'Transit agency'}
-            style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', objectFit: 'contain' }}
+            style={{ width: LOGO_WIDTH, height: 'auto', display: 'block' }}
           />
         </Box>
       )}
@@ -97,7 +101,7 @@ export default function BusStopsList({ onSelect }: Props) {
           <CircularProgress size={28} />
         </Box>
       ) : stops.length === 0 ? (
-        <Stack spacing={1} sx={{ alignItems: 'center', py: 4, color: 'text.secondary' }}>
+        <Stack spacing={1} sx={{ alignItems: 'center', textAlign: 'center', py: 4, color: 'text.secondary' }}>
           <DirectionsBusOutlinedIcon sx={{ fontSize: 36, opacity: 0.6 }} />
           <Typography variant="body2">Search a California address to see nearby bus stops.</Typography>
         </Stack>

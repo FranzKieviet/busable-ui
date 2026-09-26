@@ -21,6 +21,7 @@ export default function RightOverlay() {
       bottom={50}
       width={360}
       ariaLabel="right-overlay"
+      collapsible
       title="Places"
       titleAside={aside || undefined}
     >
