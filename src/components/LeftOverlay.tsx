@@ -5,9 +5,26 @@ import AddressSearch from "./AddressSearch"
 import BusStopsList from "./BusStopsList"
 import { useBusStops } from "@/context/BusStopsContext"
 import { FormControlLabel, Switch, Typography } from "@mui/material"
+import { useSearchParams } from "next/navigation"
+import { useEffect, useRef } from "react"
 
 export default function LeftOverlay() {
   const { stops, searchedLocation, refreshStops, uniqueOnly, setUniqueOnly } = useBusStops()
+
+  // An address picked on the welcome page arrives as ?q=<label>&lat=&lon=
+  const params = useSearchParams()
+  const initialQuery = params.get('q') ?? ''
+  const initialLat = Number(params.get('lat'))
+  const initialLon = Number(params.get('lon'))
+  const loadedFromUrl = useRef(false)
+
+  // Load stops for that address once when the page opens
+  useEffect(() => {
+    if (loadedFromUrl.current || !refreshStops) return
+    if (!params.has('lat') || !params.has('lon') || !Number.isFinite(initialLat) || !Number.isFinite(initialLon)) return
+    loadedFromUrl.current = true
+    refreshStops({ lat: initialLat, lon: initialLon })
+  }, [initialLat, initialLon, params, refreshStops])
 
   return (
     <OverlayBox
@@ -20,7 +37,7 @@ export default function LeftOverlay() {
       titleAside={stops.length > 0 ? `${stops.length} found` : undefined}
     >
       <div style={{ marginBottom: 8 }}>
-        <AddressSearch mode="stops" />
+        <AddressSearch mode="stops" initialQuery={initialQuery} />
         <FormControlLabel
           sx={{ mt: 0.5, ml: 0 }}
           label={<Typography variant="body2">Unique routes only</Typography>}

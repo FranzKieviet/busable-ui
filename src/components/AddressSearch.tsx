@@ -1,7 +1,9 @@
 "use client"
 
 import React, { useState, useRef } from "react"
-import { TextField, Autocomplete, CircularProgress } from "@mui/material"
+import { TextField, Autocomplete, CircularProgress, IconButton } from "@mui/material"
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined"
+import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined"
 import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from '@/context/PlacesContext'
 import { getLogger } from '@/lib/logger'
@@ -17,14 +19,32 @@ const GEOAPIFY_CALIFORNIA = '51f1b73d4162b05dc059e6ecf88ac9594240f00101f90163860
 const SEARCH_BIAS: [number, number] = [-122.2578, 37.8721] // [lon, lat]
 const MAX_SUGGESTIONS = 6
 
+export type AddressSuggestion = { label: string; lat: number; lon: number }
+
 type AddressSearchProps = {
   mode?: 'stops' | 'places' | 'both'
+  // When set, a picked address is handed to this instead of loading stops/places here
+  onPick?: (s: AddressSuggestion) => void
+  // Text to show in the box initially (e.g. an address passed in from another page)
+  initialQuery?: string
+  // 'panel': compact field for the map overlay. 'hero': large pill with an arrow button (welcome page).
+  variant?: 'panel' | 'hero'
+  placeholder?: string
+  // hero only: arrow clicked with no suggestion to pick (e.g. nothing typed yet)
+  onSubmitEmpty?: () => void
 }
 
-export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
+export default function AddressSearch({
+  mode = 'both',
+  onPick,
+  initialQuery = '',
+  variant = 'panel',
+  placeholder = 'Search by address',
+  onSubmitEmpty,
+}: AddressSearchProps) {
   const { refreshStops, setStops, setSearchedLocation } = useBusStops()
   const { refreshPlaces, clearPlaces } = usePlaces()
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(initialQuery)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const [open, setOpen] = useState(false)
@@ -83,6 +103,8 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
   // Clear whatever this search box populates. Places are always cleared: they're either
   // searched here or loaded from a route on one of the stops being cleared.
   function clearResults() {
+    // with onPick, results live elsewhere (e.g. on the next page), so there's nothing to clear here
+    if (onPick) return
     if (mode === 'stops' || mode === 'both') {
       setStops([])
       if (setSearchedLocation) setSearchedLocation(null)
@@ -91,16 +113,22 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
   }
 
   async function handleSelect(_e: any, value: any) {
-    const sel = value as any
+    // Enter on typed text (no option highlighted) arrives as a string: use the top suggestion
+    const sel = typeof value === 'string' ? suggestions[0] : value
     // Cancel any pending or in-flight suggestion lookup so it can't reopen the list
     if (fetchTimer.current) window.clearTimeout(fetchTimer.current)
     requestId.current++
     setSuggestionsLoading(false)
     setOpen(false)
-      if (sel && sel.lat != null && sel.lon != null) {
+    if (sel && sel.lat != null && sel.lon != null) {
       const latNum = Number(sel.lat)
       const lonNum = Number(sel.lon)
       getLogger('AddressSearch').debug('selection', { lat: sel.lat, lon: sel.lon, latNum, lonNum })
+      if (typeof value === 'string') setQuery(sel.label)
+      if (onPick) {
+        onPick({ label: sel.label, lat: latNum, lon: lonNum })
+        return
+      }
       const promises: Promise<any>[] = []
       const shouldRefreshStops = mode === 'stops' || mode === 'both'
       const shouldRefreshPlaces = mode === 'places' || mode === 'both'
@@ -110,9 +138,18 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
     }
   }
 
+  const hero = variant === 'hero'
+
+  // hero arrow: pick the top suggestion, or hand off when there's nothing to pick
+  function submit() {
+    if (suggestions[0]) handleSelect(null, suggestions[0])
+    else onSubmitEmpty?.()
+  }
+
   return (
     <Autocomplete
       freeSolo
+      inputValue={query}
       open={open}
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
@@ -145,14 +182,72 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
           </div>
         </li>
       )}
-      renderInput={(params) => (
-  <TextField
-    {...params}
-    size="small"
-    placeholder="Search by address"
-    fullWidth
-  />
-)}
+      renderInput={(params) =>
+        hero ? (
+          <TextField
+            {...params}
+            placeholder={placeholder}
+            fullWidth
+            slotProps={{
+              ...params.slotProps,
+              input: {
+                ...params.slotProps.input,
+                startAdornment: (
+                  <>
+                    <SearchOutlinedIcon sx={{ color: HERO_NAVY, ml: 1 }} />
+                    {params.slotProps.input.startAdornment}
+                  </>
+                ),
+                endAdornment: (
+                  <>
+                    {params.slotProps.input.endAdornment}
+                    <IconButton
+                      aria-label="Search"
+                      onClick={submit}
+                      sx={{ bgcolor: HERO_NAVY, color: '#fff', width: 38, height: 38, '&:hover': { bgcolor: '#16356e' } }}
+                    >
+                      <ArrowForwardOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                ),
+              },
+            }}
+            sx={heroFieldSx}
+          />
+        ) : (
+          <TextField
+            {...params}
+            size="small"
+            placeholder={placeholder}
+            fullWidth
+          />
+        )
+      }
     />
   )
 }
+
+const HERO_NAVY = '#0a1f44'
+
+// Large off-white pill used on the welcome page
+const heroFieldSx = {
+  '& .MuiOutlinedInput-root': {
+    // room on the right for the clear (x) button plus the arrow
+    pl: 1.5,
+    pr: '8px !important',
+    py: '6px !important',
+    borderRadius: 999,
+    bgcolor: '#eef2f8',
+    color: '#1f2a44',
+    fontSize: { xs: 15, sm: 17 },
+    boxShadow: '0 6px 18px rgba(0,0,0,0.22)',
+    transition: 'box-shadow 150ms, background-color 150ms',
+    '& fieldset': { borderColor: 'rgba(10,31,68,0.08)' },
+    '&:hover': { bgcolor: '#f6f8fc' },
+    '&:hover fieldset': { borderColor: 'rgba(10,31,68,0.15)' },
+    '&.Mui-focused': { bgcolor: '#f6f8fc', boxShadow: '0 10px 24px rgba(0,0,0,0.3), 0 0 0 3px rgba(92,200,255,0.35)' },
+    '&.Mui-focused fieldset': { borderColor: 'transparent' },
+  },
+  '& .MuiAutocomplete-endAdornment': { position: 'static', display: 'flex', alignItems: 'center', gap: 0.5, transform: 'none' },
+  '& input::placeholder': { color: '#4a5670', opacity: 1 },
+} as const

@@ -39,14 +39,27 @@ export default function Navbar() {
       sx={{ top: 0, zIndex: (theme) => theme.zIndex.appBar, backdropFilter: "blur(4px)" }}
     >
       <Toolbar>
-        {/* LEFT SIDE (logo) */}
-        <Image
-            src="/franz-logo-bart-theme.png"
-            alt="Logo"
-            width={40}
-            height={40}
-            style={{ borderRadius: 8 }}
-        />
+        {/* LEFT SIDE (logo) on a white circle; the logo's own white background blends into it */}
+        <Box
+          sx={{
+            width: 52,
+            height: 52,
+            borderRadius: "50%",
+            bgcolor: "#fff",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Image
+              src="/franz-logo-bart-theme.png"
+              alt="Logo"
+              width={34}
+              height={34}
+          />
+        </Box>
 
       </Toolbar>
     </AppBar>
