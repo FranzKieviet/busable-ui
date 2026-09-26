@@ -1,14 +1,17 @@
 "use client"
 
 import React from "react"
-import { Box, CircularProgress, Stack, Typography } from "@mui/material"
+import { Box, CircularProgress, Link, Stack, Typography } from "@mui/material"
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined"
 import DirectionsBusIcon from "@mui/icons-material/DirectionsBus"
+import DirectionsTransitIcon from "@mui/icons-material/DirectionsTransit"
+import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 import { usePlaces } from "@/context/PlacesContext"
 import type { Place } from "@/context/PlacesContext"
+import { useBusStops } from "@/context/BusStopsContext"
 import type { BusRoute } from "@/context/BusStopsContext"
 import { PLACE_CATEGORY_BY_ID } from "@/lib/placeCategories"
-import { ListCard, CoordsLine } from "./ListCard"
+import { ListCard } from "./ListCard"
 import RouteBadge, { routeColor } from "./RouteBadge"
 import { useScrollToCard, SCROLL_SPACER_HEIGHT } from "@/lib/useScrollToCard"
 
@@ -36,6 +39,32 @@ function tripTime(p: Place): { total: number; ride: number; walk: number } | nul
   const ride = p.travelTimeSec / 60
   const walk = p.distanceToStopM != null ? p.distanceToStopM / WALK_M_PER_MIN : 0
   return { total: Math.max(1, Math.round(ride + walk)), ride: Math.round(ride), walk: Math.round(walk) }
+}
+
+// Google Maps transit directions to the place. Coordinates are [lon, lat]; Google wants "lat,lng".
+// Starts from the searched address when there is one, otherwise Google uses the user's location.
+function googleTransitUrl(destination: [number, number], origin?: [number, number] | null) {
+  const params = new URLSearchParams({ api: '1', destination: `${destination[1]},${destination[0]}`, travelmode: 'transit' })
+  if (origin) params.set('origin', `${origin[1]},${origin[0]}`)
+  return `https://www.google.com/maps/dir/?${params.toString()}`
+}
+
+function DirectionsLink({ place, origin }: { place: Place; origin?: [number, number] | null }) {
+  return (
+    <Link
+      href={googleTransitUrl(place.coords, origin)}
+      target="_blank"
+      rel="noopener noreferrer"
+      underline="hover"
+      // don't also trigger the card's onSelect
+      onClick={(e) => e.stopPropagation()}
+      sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 0.5, color: '#42a5f5', fontSize: 14 }}
+    >
+      <DirectionsTransitIcon sx={{ fontSize: 16 }} />
+      Open in Google Maps
+      <OpenInNewIcon sx={{ fontSize: 13 }} />
+    </Link>
+  )
 }
 
 // Category icon in a circle of the category's color
@@ -135,6 +164,7 @@ type PlaceCardProps = {
 
 function PlaceCard({ place, route, originName, onSelect, cardRef }: PlaceCardProps) {
   const trip = tripTime(place)
+  const { searchedLocation } = useBusStops()
   return (
     <ListCard
       title={place.name}
@@ -148,7 +178,7 @@ function PlaceCard({ place, route, originName, onSelect, cardRef }: PlaceCardPro
       cardRef={cardRef}
       onClick={() => onSelect?.(place)}
     >
-      <CoordsLine coords={place.coords} />
+      <DirectionsLink place={place} origin={searchedLocation} />
 
       {/* Right padding keeps the journey clear of the trip time */}
       <Box sx={{ pr: 9 }}>{route && <Journey place={place} route={route} originName={originName} />}</Box>
