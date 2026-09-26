@@ -55,6 +55,32 @@ function addStopMarker(
     .addTo(map)
 }
 
+// Material "Home" glyph
+const HOME_ICON_PATH = 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z'
+
+// Map pin (tip at the bottom) in the route's color with a bus icon inside, for the boarding stop
+function addBoardingPin(map: any, s: { coords: [number, number]; name: string }, color: string) {
+  const el = document.createElement('div')
+  el.style.width = '36px'
+  el.style.height = '46px'
+  el.style.cursor = 'pointer'
+  el.style.zIndex = '3'
+  el.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))'
+  el.title = `Board here: ${s.name}`
+  el.innerHTML = `
+    <svg viewBox="0 0 36 46" width="36" height="46" aria-hidden="true">
+      <path d="M18 1.5C9 1.5 1.5 8.7 1.5 17.6 1.5 29.5 18 44.5 18 44.5S34.5 29.5 34.5 17.6C34.5 8.7 27 1.5 18 1.5z"
+        fill="${color}" stroke="white" stroke-width="2.5"/>
+      <circle cx="18" cy="17.5" r="10.5" fill="white"/>
+      <svg x="10.5" y="10" width="15" height="15" viewBox="0 0 24 24"><path d="${BUS_ICON_PATH}" fill="${color}"/></svg>
+    </svg>`
+
+  return new (maplibregl as any).Marker({ element: el, anchor: 'bottom' })
+    .setLngLat(s.coords)
+    .setPopup(new (maplibregl as any).Popup({ offset: [0, -44] }).setText(`Board here · ${s.name}`))
+    .addTo(map)
+}
+
 // Marker keys: nearby stops use the raw stop id; everything else is prefixed
 const SEARCHED_KEY = '__searched_location'
 const DOWNSTREAM_PREFIX = 'down:'
@@ -181,14 +207,20 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     }
 
     if (searchedLocation && Array.isArray(searchedLocation)) {
+      // Home icon: white house in a red circle, above stop and place markers
       const el = document.createElement('div')
-      el.style.width = '18px'
-      el.style.height = '18px'
+      el.style.width = '32px'
+      el.style.height = '32px'
       el.style.borderRadius = '50%'
-      el.style.background = 'red'
-      el.style.border = '2px solid white'
-      el.style.boxShadow = '0 0 4px rgba(0,0,0,0.4)'
+      el.style.background = '#d62828'
+      el.style.border = '3px solid white'
+      el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.45)'
+      el.style.display = 'flex'
+      el.style.alignItems = 'center'
+      el.style.justifyContent = 'center'
+      el.style.zIndex = '3'
       el.title = 'Searched location'
+      el.innerHTML = `<svg viewBox="0 0 24 24" width="18" height="18" fill="white" aria-hidden="true"><path d="${HOME_ICON_PATH}"/></svg>`
 
       const m = new (maplibregl as any).Marker({ element: el })
         .setLngLat(searchedLocation)
@@ -267,7 +299,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     })
   }, [places])
 
-  // Downstream stops for the selected route: route-colored stop markers, and fit the map to the trip
+  // Selected route: boarding-stop pin + route-colored downstream stop markers, and fit the map to the trip
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -278,9 +310,16 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
       try { markersRef.current[k].remove() } catch (_) {}
       delete markersRef.current[k]
     })
+    if (!downstream) return
+
+    const color = downstream.route ? routeColor(downstream.route) : '#1e3a8a'
+
+    // Boarding stop: a pin in the route's color, shown as soon as the route is picked
+    const origin = stops.find((s) => s.id === downstream.stopId)
+    if (origin) markersRef.current[`${DOWNSTREAM_PREFIX}origin`] = addBoardingPin(map, origin, color)
+
     if (downstreamStops.length === 0) return
 
-    const color = downstream?.route ? routeColor(downstream.route) : '#1e3a8a'
     downstreamStops.forEach((s) => {
       const ride = s.travelTimeSec != null ? ` · ${Math.max(1, Math.round(s.travelTimeSec / 60))} min ride` : ''
       markersRef.current[`${DOWNSTREAM_PREFIX}${s.id}`] = addStopMarker(map, s, {
@@ -292,7 +331,6 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     })
 
     // Show the whole trip: boarding stop (if it's in the nearby list) plus every downstream stop
-    const origin = stops.find((s) => s.id === downstream?.stopId)
     const points = [...(origin ? [origin.coords] : []), ...downstreamStops.map((s) => s.coords)]
     try {
       const bounds = points.reduce(
@@ -307,7 +345,7 @@ export default function Map({ center = [-122.2578, 37.8721], zoom = 15 }: Props)
     } catch (err) {
       getLogger('Map').warn('fitBounds for downstream stops failed', err)
     }
-  }, [downstreamStops])
+  }, [downstream, downstreamStops])
 
   return (
     <div style={{ position: 'relative' }}>
