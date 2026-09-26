@@ -132,7 +132,8 @@ export function BusStopsProvider({ children }: { children: React.ReactNode }) {
       } else {
         console.warn('Unknown stops payload', raw)
       }
-      setStops(mapped)
+      // Hide stops with no bus lines: there's nothing to ride from them (affects the list, count and map)
+      setStops(mapped.filter((s) => (s.routes_served?.length ?? 0) > 0))
       // record searched location when explicit lat/lon provided (coerce strings to numbers)
       const latN = opts?.lat != null ? Number(opts.lat) : NaN
       const lonN = opts?.lon != null ? Number(opts.lon) : NaN
