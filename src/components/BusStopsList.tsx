@@ -99,7 +99,7 @@ export default function BusStopsList({ onSelect }: Props) {
       ) : stops.length === 0 ? (
         <Stack spacing={1} sx={{ alignItems: 'center', py: 4, color: 'text.secondary' }}>
           <DirectionsBusOutlinedIcon sx={{ fontSize: 36, opacity: 0.6 }} />
-          <Typography variant="body2">Search an address to see nearby bus stops.</Typography>
+          <Typography variant="body2">Search a California address to see nearby bus stops.</Typography>
         </Stack>
       ) : (
         <Stack spacing={1.25}>

@@ -6,6 +6,17 @@ import { useBusStops } from "@/context/BusStopsContext"
 import { usePlaces } from '@/context/PlacesContext'
 import { getLogger } from '@/lib/logger'
 
+// Suggestions are limited to California:
+// - GEOAPIFY_CALIFORNIA is Geoapify's place_id for the state of California (from
+//   /v1/geocode/search?text=California&type=state&filter=countrycode:us); `filter=place:` keeps
+//   results inside its boundary
+// - results are also checked for state_code "CA", since the boundary filter lets a few near-border
+//   results through
+// - `bias` ranks results near the map's default center (Berkeley) first
+const GEOAPIFY_CALIFORNIA = '51f1b73d4162b05dc059e6ecf88ac9594240f00101f9016386020000000000c0020a92030a43616c69666f726e6961'
+const SEARCH_BIAS: [number, number] = [-122.2578, 37.8721] // [lon, lat]
+const MAX_SUGGESTIONS = 6
+
 type AddressSearchProps = {
   mode?: 'stops' | 'places' | 'both'
 }
@@ -30,7 +41,17 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
     }
     setSuggestionsLoading(true)
     try {
-      const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(text)}&limit=6&format=json&lang=en&apiKey=${key}`
+      const params = new URLSearchParams({
+        text,
+        // ask for extra so there are still enough after dropping non-California results
+        limit: '10',
+        format: 'json',
+        lang: 'en',
+        filter: `place:${GEOAPIFY_CALIFORNIA}`,
+        bias: `proximity:${SEARCH_BIAS[0]},${SEARCH_BIAS[1]}`,
+        apiKey: key,
+      })
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?${params.toString()}`
       const res = await fetch(url)
       const textRes = await res.text()
       if (id !== requestId.current) return
@@ -40,7 +61,8 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
       }
       const data = JSON.parse(textRes || '{}')
       const rawList = Array.isArray(data.features) ? data.features : Array.isArray(data.results) ? data.results : []
-      const items = rawList.map((f: any) => {
+      const inCalifornia = rawList.filter((f: any) => (f.properties?.state_code ?? f.state_code) === 'CA')
+      const items = inCalifornia.slice(0, MAX_SUGGESTIONS).map((f: any) => {
         const geom = f.geometry?.coordinates || (Array.isArray(f.geometry?.coordinates) ? f.geometry.coordinates : null)
         const lon = geom?.[0] ?? f.lon ?? f.longitude ?? f.properties?.lon
         const lat = geom?.[1] ?? f.lat ?? f.latitude ?? f.properties?.lat
