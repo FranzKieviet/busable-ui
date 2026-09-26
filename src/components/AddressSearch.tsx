@@ -12,7 +12,7 @@ type AddressSearchProps = {
 
 export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
   const { refreshStops, setStops, setSearchedLocation } = useBusStops()
-  const { refreshPlaces, setPlaces } = usePlaces()
+  const { refreshPlaces, clearPlaces } = usePlaces()
   const [query, setQuery] = useState("")
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -58,13 +58,14 @@ export default function AddressSearch({ mode = 'both' }: AddressSearchProps) {
     }
   }
 
-  // Clear whatever this search box populates (mirrors the refresh logic in handleSelect)
+  // Clear whatever this search box populates. Places are always cleared: they're either
+  // searched here or loaded from a route on one of the stops being cleared.
   function clearResults() {
     if (mode === 'stops' || mode === 'both') {
       setStops([])
       if (setSearchedLocation) setSearchedLocation(null)
     }
-    if (mode === 'places' || mode === 'both') setPlaces([])
+    clearPlaces()
   }
 
   async function handleSelect(_e: any, value: any) {
