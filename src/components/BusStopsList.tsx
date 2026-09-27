@@ -11,7 +11,7 @@ import { ListCard, CoordsLine } from "./ListCard"
 import RouteBadge, { routeKey } from "./RouteBadge"
 import { useScrollToCard, SCROLL_SPACER_HEIGHT } from "@/lib/useScrollToCard"
 import HelpTip from "./HelpTip"
-import acTransitLogo from "@/assests/logos/ac-transit.webp"
+import acTransitLogo from "@/assests/logos/ac-transit.svg"
 
 // Agency slug (from the API's `agency` field) -> logo. Add new agencies here.
 const AGENCY_LOGOS: Record<string, StaticImageData> = {
