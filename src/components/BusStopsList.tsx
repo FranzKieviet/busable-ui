@@ -28,10 +28,17 @@ const LOGO_PAD_X = 6
 // Space the route badges leave on the right for the logo label
 const LOGO_SLOT = LOGO_WIDTH + LOGO_PAD_X * 2
 
-// The API can list the same route/direction more than once; show each bus number + direction once
+// The API can list the same route/direction more than once; show each bus number + direction once.
+// When a stop serves both directions of a route, only the outbound one is shown.
 function uniqueRoutes(routes: BusRoute[] = []): BusRoute[] {
+  const hasOutbound = new Set(routes.filter((r) => r.direction === 0).map((r) => r.route_short_name))
   const seen = new Set<string>()
-  return routes.filter((r) => !seen.has(routeKey(r)) && seen.add(routeKey(r)))
+  return routes.filter((r) => {
+    if (r.direction === 1 && hasOutbound.has(r.route_short_name)) return false
+    if (seen.has(routeKey(r))) return false
+    seen.add(routeKey(r))
+    return true
+  })
 }
 
 type CardProps = {
